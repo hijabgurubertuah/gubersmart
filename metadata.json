@@ -1,0 +1,6 @@
+{
+  "name": "GuberSmart - Platform Penjualan & Member Area Produk Digital",
+  "description": "Platform penjualan produk digital terpusat, landing page per produk, registrasi Lynk.id, integrasi Google Drive, dan member area eksklusif.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
