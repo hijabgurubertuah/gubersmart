@@ -340,7 +340,23 @@ class StoreManager {
   }
 
   public applyRemoteCMS(remoteCms: Partial<CMSSettings>): void {
-    this.cms = { ...this.cms, ...remoteCms };
+    const mergedIdentity = {
+      ...this.cms.identity,
+      ...(remoteCms.identity || {}),
+      logoUrl: (remoteCms.identity?.logoUrl && remoteCms.identity.logoUrl.trim() !== '')
+        ? remoteCms.identity.logoUrl
+        : this.cms.identity.logoUrl,
+    };
+
+    this.cms = {
+      ...this.cms,
+      ...remoteCms,
+      identity: mergedIdentity,
+      sync: {
+        ...this.cms.sync,
+        ...(remoteCms.sync || {}),
+      },
+    };
     this.save(STORAGE_KEYS.CMS, this.cms);
     this.notify();
   }
@@ -355,7 +371,13 @@ class StoreManager {
 
   public applyRemoteCourses(remoteCourses: Course[]): void {
     if (remoteCourses.length > 0) {
-      this.courses = remoteCourses;
+      this.courses = remoteCourses.map((rc) => {
+        const existing = this.courses.find((c) => c.id === rc.id);
+        return {
+          ...rc,
+          coverValue: (rc.coverValue && rc.coverValue.trim() !== '') ? rc.coverValue : (existing?.coverValue || ''),
+        };
+      });
       this.save(STORAGE_KEYS.COURSES, this.courses);
       this.notify();
     }
@@ -363,7 +385,13 @@ class StoreManager {
 
   public applyRemoteExamples(remoteExamples: AppExample[]): void {
     if (remoteExamples.length > 0) {
-      this.appExamples = remoteExamples;
+      this.appExamples = remoteExamples.map((re) => {
+        const existing = this.appExamples.find((e) => e.id === re.id);
+        return {
+          ...re,
+          imageUrl: (re.imageUrl && re.imageUrl.trim() !== '') ? re.imageUrl : (existing?.imageUrl || ''),
+        };
+      });
       this.save(STORAGE_KEYS.APP_EXAMPLES, this.appExamples);
       this.notify();
     }
@@ -371,7 +399,13 @@ class StoreManager {
 
   public applyRemoteTestimonials(remoteTestis: Testimonial[]): void {
     if (remoteTestis.length > 0) {
-      this.testimonials = remoteTestis;
+      this.testimonials = remoteTestis.map((rt) => {
+        const existing = this.testimonials.find((t) => t.id === rt.id);
+        return {
+          ...rt,
+          avatarUrl: (rt.avatarUrl && rt.avatarUrl.trim() !== '') ? rt.avatarUrl : (existing?.avatarUrl || ''),
+        };
+      });
       this.save(STORAGE_KEYS.TESTIMONIALS, this.testimonials);
       this.notify();
     }

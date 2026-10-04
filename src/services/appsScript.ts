@@ -2,7 +2,8 @@
 
 export const APPS_SCRIPT_CODE = `/**
  * Guber Smart - Google Apps Script Bridge
- * PENTING: Jangan ubah kode selain TOKEN dan FOLDER_ID di bawah ini.
+ * Menangani semua unggahan berkas & gambar ke Google Drive secara otomatis.
+ * PENTING: Jangan ubah kode selain TOKEN dan FOLDER_ID di bawah ini jika ingin kustom.
  */
 
 const SECRET_TOKEN = "GUBER_SMART_SECURE_TOKEN_2026";
@@ -10,84 +11,196 @@ const DRIVE_FOLDER_ID = "YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE";
 
 function doPost(e) {
   try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return responseJSON({ status: "error", message: "Data permintaan kosong" });
+    }
+
     const data = JSON.parse(e.postData.contents);
     
-    // Validasi Token
+    // 1. Validasi Token Keamanan
     if (data.token !== SECRET_TOKEN) {
-      return ContentService.createTextOutput(JSON.stringify({
+      return responseJSON({
         status: "error",
-        message: "Unauthorized token"
-      })).setMimeType(ContentService.MimeType.JSON);
+        message: "Unauthorized: Token tidak cocok"
+      });
     }
 
     const action = data.action;
 
-    // 1. Uji Koneksi
+    // 2. Uji Koneksi (Ping)
     if (action === "ping") {
-      return ContentService.createTextOutput(JSON.stringify({
+      return responseJSON({
         status: "success",
-        message: "Connected"
-      })).setMimeType(ContentService.MimeType.JSON);
+        message: "Koneksi ke Google Drive berhasil terhubung!"
+      });
     }
 
-    // 2. Unggah File ke Drive
+    // 3. Unggah Berkas / Gambar ke Google Drive
     if (action === "upload") {
-      const folder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-      const decodedBytes = Utilities.base64Decode(data.base64);
-      const blob = Utilities.newBlob(decodedBytes, data.mimeType, data.fileName);
+      const folderId = (data.driveFolderId && data.driveFolderId !== "YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE")
+        ? data.driveFolderId
+        : ((DRIVE_FOLDER_ID && DRIVE_FOLDER_ID !== "YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE") ? DRIVE_FOLDER_ID : null);
+
+      let folder;
+      if (folderId) {
+        try {
+          folder = DriveApp.getFolderById(folderId);
+        } catch (err) {
+          folder = DriveApp.getRootFolder();
+        }
+      } else {
+        folder = DriveApp.getRootFolder();
+      }
+
+      // Bersihkan base64 data jika masih ada prefix data:image/...;base64,
+      let cleanBase64 = data.base64 || "";
+      if (cleanBase64.indexOf(",") > -1) {
+        cleanBase64 = cleanBase64.split(",")[1];
+      }
+
+      const mimeType = data.mimeType || "image/jpeg";
+      const fileName = data.fileName || ("upload_" + new Date().getTime() + ".jpg");
+
+      const decodedBytes = Utilities.base64Decode(cleanBase64);
+      const blob = Utilities.newBlob(decodedBytes, mimeType, fileName);
       const file = folder.createFile(blob);
+
+      // Set perizinan publik: siapapun yang punya link bisa melihat
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
-      return ContentService.createTextOutput(JSON.stringify({
+      const fileId = file.getId();
+      // Direct high-res link yang bisa langsung ditampilkan pada tag <img> di web
+      const directUrl = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1600";
+      const lh3Url = "https://lh3.googleusercontent.com/d/" + fileId;
+      const downloadUrl = file.getDownloadUrl();
+      const viewUrl = file.getUrl();
+
+      return responseJSON({
         status: "success",
-        fileId: file.getId(),
+        fileId: fileId,
         fileName: file.getName(),
-        downloadUrl: file.getDownloadUrl(),
-        viewUrl: file.getUrl()
-      })).setMimeType(ContentService.MimeType.JSON);
+        directUrl: directUrl,
+        lh3Url: lh3Url,
+        downloadUrl: downloadUrl,
+        viewUrl: viewUrl
+      });
     }
 
-    // 3. Hapus File dari Drive
+    // 4. Hapus Berkas dari Drive
     if (action === "delete") {
+      if (!data.fileId) {
+        return responseJSON({ status: "error", message: "ID berkas diperlukan" });
+      }
       const file = DriveApp.getFileById(data.fileId);
       file.setTrashed(true);
-      return ContentService.createTextOutput(JSON.stringify({
+      return responseJSON({
         status: "success",
-        fileId: data.fileId
-      })).setMimeType(ContentService.MimeType.JSON);
+        fileId: data.fileId,
+        message: "Berkas berhasil dipindahkan ke sampah"
+      });
     }
 
-    // 4. Ambil Konten Gambar Base64
+    // 5. Ambil Gambar dalam Base64
     if (action === "getImage") {
       const file = DriveApp.getFileById(data.fileId);
       const bytes = file.getBlob().getBytes();
       const base64 = Utilities.base64Encode(bytes);
-      return ContentService.createTextOutput(JSON.stringify({
+      return responseJSON({
         status: "success",
         base64: "data:" + file.getMimeType() + ";base64," + base64
-      })).setMimeType(ContentService.MimeType.JSON);
+      });
     }
 
-    return ContentService.createTextOutput(JSON.stringify({
-      status: "error",
-      message: "Unknown action"
-    })).setMimeType(ContentService.MimeType.JSON);
+    return responseJSON({ status: "error", message: "Aksi tidak dikenal: " + action });
 
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({
+    return responseJSON({
       status: "error",
       message: error.toString()
-    })).setMimeType(ContentService.MimeType.JSON);
+    });
   }
 }
 
+function responseJSON(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
 function doGet(e) {
-  return ContentService.createTextOutput(JSON.stringify({
+  return responseJSON({
     status: "success",
-    service: "Guber Smart Apps Script Bridge"
-  })).setMimeType(ContentService.MimeType.JSON);
+    service: "Guber Smart Google Apps Script Bridge",
+    active: true
+  });
 }
 `;
+
+export interface UploadDriveOptions {
+  webAppUrl: string;
+  token?: string;
+  driveFolderId?: string;
+  file: File;
+  compressedDataUrl?: string;
+}
+
+export interface UploadDriveResult {
+  status: 'success' | 'error';
+  directUrl?: string;
+  downloadUrl?: string;
+  viewUrl?: string;
+  fileId?: string;
+  message?: string;
+}
+
+// Upload file directly to Google Drive via Apps Script Web App
+export async function uploadFileToDrive(options: UploadDriveOptions): Promise<UploadDriveResult> {
+  const { webAppUrl, token = 'GUBER_SMART_SECURE_TOKEN_2026', driveFolderId, file, compressedDataUrl } = options;
+
+  if (!webAppUrl || webAppUrl.trim().length < 10) {
+    throw new Error('URL Web App Google Script belum diatur');
+  }
+
+  // Use compressed base64 if provided, else read file
+  let base64 = '';
+  let mimeType = file.type || 'image/jpeg';
+
+  if (compressedDataUrl) {
+    base64 = compressedDataUrl.split(',')[1] || compressedDataUrl;
+    mimeType = 'image/jpeg';
+  } else {
+    base64 = await fileToBase64(file);
+  }
+
+  const payload = {
+    action: 'upload',
+    token: token.trim(),
+    driveFolderId: driveFolderId?.trim() || '',
+    fileName: file.name,
+    mimeType: mimeType,
+    base64: base64,
+  };
+
+  const response = await fetch(webAppUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8', // Apps Script handles text/plain CORS automatically
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const resJson = await response.json();
+  if (resJson.status === 'success') {
+    return {
+      status: 'success',
+      directUrl: resJson.directUrl || resJson.lh3Url || resJson.viewUrl,
+      downloadUrl: resJson.downloadUrl,
+      viewUrl: resJson.viewUrl,
+      fileId: resJson.fileId,
+    };
+  } else {
+    throw new Error(resJson.message || 'Gagal mengunggah ke Google Drive');
+  }
+}
 
 // Client-side image compression
 export async function compressImageFile(file: File, maxDimension = 1200, quality = 0.8): Promise<{ dataUrl: string; size: number }> {
@@ -146,3 +259,4 @@ export function fileToBase64(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
