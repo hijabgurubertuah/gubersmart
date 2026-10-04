@@ -62,14 +62,14 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="sticky top-16 z-20 bg-slate-50/95 dark:bg-slate-950/95 py-3 -mt-2 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
           Pengaturan Tampilan (CMS)
         </h2>
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
-            className="h-10 px-5 text-sm font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] rounded-[12px] flex items-center gap-1.5 shadow-xs"
+            className="h-10 px-5 text-sm font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] active:scale-[0.98] rounded-[12px] flex items-center gap-2 shadow-sm transition-all"
           >
             <Save className="w-4 h-4" />
             Simpan Perubahan
@@ -683,7 +683,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
               <button
                 type="button"
                 onClick={handleReset}
-                className="min-h-[44px] px-5 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-[12px] flex items-center gap-2"
+                className="min-h-[44px] px-5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-[12px] flex items-center gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
                 Pulihkan Bawaan
@@ -697,6 +697,28 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                 Simpan
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Persistent bottom save action bar on every tab */}
+        {activeTab !== 'save' && (
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="min-h-[42px] px-4 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-[12px] flex items-center gap-2 transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Pulihkan Bawaan
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="min-h-[42px] px-6 text-sm font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] active:scale-[0.98] rounded-[12px] flex items-center gap-2 shadow-xs transition-all"
+            >
+              <Save className="w-4 h-4" />
+              Simpan Perubahan
+            </button>
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CMSSettings, Role } from '../../types';
 import {
   Menu,
@@ -39,11 +39,42 @@ export const Navbar: React.FC<NavbarProps> = ({
   onInstall,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const toggleButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Lock body scroll when drawer is open
+  // Lock body scroll and listen for outside clicks / Escape when drawer is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setIsOpen(false);
+        }
+      };
+
+      const handlePointerDownOutside = (e: MouseEvent | TouchEvent) => {
+        const target = e.target as Node;
+        if (
+          drawerRef.current &&
+          !drawerRef.current.contains(target) &&
+          toggleButtonRef.current &&
+          !toggleButtonRef.current.contains(target)
+        ) {
+          setIsOpen(false);
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('mousedown', handlePointerDownOutside);
+      document.addEventListener('touchstart', handlePointerDownOutside);
+
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('mousedown', handlePointerDownOutside);
+        document.removeEventListener('touchstart', handlePointerDownOutside);
+      };
     } else {
       document.body.style.overflow = '';
     }
@@ -90,6 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2">
           {/* Mobile Hamburger Button */}
           <button
+            ref={toggleButtonRef}
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden w-11 h-11 -ml-1.5 flex items-center justify-center rounded-[12px] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
             aria-label={isOpen ? 'Tutup menu' : 'Buka menu'}
@@ -197,13 +229,14 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Mobile Drawer Backdrop */}
       {isOpen && (
         <div
-          className="fixed inset-0 top-16 bg-black/50 z-40 backdrop-blur-xs md:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-xs md:hidden animate-in fade-in duration-200"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Mobile Drawer (Width ~85%, slides from left) */}
       <div
+        ref={drawerRef}
         className={`fixed top-16 left-0 h-[calc(100dvh-4rem)] w-[85%] max-w-[340px] bg-white dark:bg-slate-900 z-50 shadow-2xl flex flex-col transition-transform duration-300 ease-out md:hidden border-r border-slate-200 dark:border-slate-800 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
