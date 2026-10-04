@@ -3,10 +3,9 @@
 export const APPS_SCRIPT_CODE = `/**
  * Guber Smart - Google Apps Script Bridge
  * Menangani semua unggahan berkas & gambar ke Google Drive secara otomatis.
- * PENTING: Jangan ubah kode selain TOKEN dan FOLDER_ID di bawah ini jika ingin kustom.
+ * Tanpa token / password - langsung pakai cukup dengan URL Web App.
  */
 
-const SECRET_TOKEN = "GUBER_SMART_SECURE_TOKEN_2026";
 const DRIVE_FOLDER_ID = "YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE";
 
 function doPost(e) {
@@ -16,18 +15,9 @@ function doPost(e) {
     }
 
     const data = JSON.parse(e.postData.contents);
-    
-    // 1. Validasi Token Keamanan
-    if (data.token !== SECRET_TOKEN) {
-      return responseJSON({
-        status: "error",
-        message: "Unauthorized: Token tidak cocok"
-      });
-    }
-
     const action = data.action;
 
-    // 2. Uji Koneksi (Ping)
+    // 1. Uji Koneksi (Ping)
     if (action === "ping") {
       return responseJSON({
         status: "success",
@@ -35,7 +25,7 @@ function doPost(e) {
       });
     }
 
-    // 3. Unggah Berkas / Gambar ke Google Drive
+    // 2. Unggah Berkas / Gambar ke Google Drive
     if (action === "upload") {
       const folderId = (data.driveFolderId && data.driveFolderId !== "YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE")
         ? data.driveFolderId
@@ -86,7 +76,7 @@ function doPost(e) {
       });
     }
 
-    // 4. Hapus Berkas dari Drive
+    // 3. Hapus Berkas dari Drive
     if (action === "delete") {
       if (!data.fileId) {
         return responseJSON({ status: "error", message: "ID berkas diperlukan" });
@@ -100,7 +90,7 @@ function doPost(e) {
       });
     }
 
-    // 5. Ambil Gambar dalam Base64
+    // 4. Ambil Gambar dalam Base64
     if (action === "getImage") {
       const file = DriveApp.getFileById(data.fileId);
       const bytes = file.getBlob().getBytes();
@@ -133,14 +123,24 @@ function doGet(e) {
     active: true
   });
 }
+
+/**
+ * PENTING: Jalankan fungsi ini sekali di editor Google Apps Script dengan tombol [Run / Jalankan]
+ * untuk memberikan izin otorisasi Google Drive (DriveApp) ke akun Anda!
+ */
+function initPermissions() {
+  const root = DriveApp.getRootFolder();
+  Logger.log("Akses DriveApp berhasil diotorisasi untuk: " + root.getName());
+  return "Izin Google Drive berhasil diberikan!";
+}
 `;
 
 export interface UploadDriveOptions {
   webAppUrl: string;
-  token?: string;
   driveFolderId?: string;
   file: File;
   compressedDataUrl?: string;
+  token?: string; // Optional deprecated
 }
 
 export interface UploadDriveResult {
@@ -154,7 +154,7 @@ export interface UploadDriveResult {
 
 // Upload file directly to Google Drive via Apps Script Web App
 export async function uploadFileToDrive(options: UploadDriveOptions): Promise<UploadDriveResult> {
-  const { webAppUrl, token = 'GUBER_SMART_SECURE_TOKEN_2026', driveFolderId, file, compressedDataUrl } = options;
+  const { webAppUrl, driveFolderId, file, compressedDataUrl } = options;
 
   if (!webAppUrl || webAppUrl.trim().length < 10) {
     throw new Error('URL Web App Google Script belum diatur');
@@ -173,7 +173,6 @@ export async function uploadFileToDrive(options: UploadDriveOptions): Promise<Up
 
   const payload = {
     action: 'upload',
-    token: token.trim(),
     driveFolderId: driveFolderId?.trim() || '',
     fileName: file.name,
     mimeType: mimeType,

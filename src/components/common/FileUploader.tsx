@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { FileSource } from '../../types';
-import { Trash2, Loader2, FileText } from 'lucide-react';
+import { uploadFileToDrive } from '../../services/appsScript';
+import { store } from '../../services/store';
+import { Trash2, Loader2, FileText, CheckCircle2, Cloud } from 'lucide-react';
 
 interface FileUploaderProps {
   label: string;
@@ -21,8 +23,12 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<FileSource>(source || 'tautan');
   const [isLoading, setIsLoading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentName, setCurrentName] = useState(fileName || '');
+  const [isDriveSaved, setIsDriveSaved] = useState(
+    Boolean(value && (value.includes('google.com') || value.includes('googleusercontent.com')))
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleTabSwitch = (tab: FileSource) => {
@@ -30,19 +36,19 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     setError(null);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check size max 20MB
-    if (file.size > 20 * 1024 * 1024) {
-      setError('Ukuran file melebihi batas');
+    // Check size max 25MB
+    if (file.size > 25 * 1024 * 1024) {
+      setError('Ukuran file melebihi batas 25MB');
       return;
     }
 
     // Check extension
     const ext = file.name.split('.').pop()?.toLowerCase();
-    const validExts = ['pdf', 'zip', 'skill', 'md', 'txt', 'docx', 'xlsx'];
+    const validExts = ['pdf', 'zip', 'skill', 'md', 'txt', 'docx', 'xlsx', 'csv', 'png', 'jpg', 'jpeg'];
     if (!ext || !validExts.includes(ext)) {
       setError('Format file tidak didukung');
       return;
@@ -50,20 +56,52 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
 
     setError(null);
     setIsLoading(true);
+    setCurrentName(file.name);
+    setUploadStatus('Mempersiapkan berkas...');
 
-    // Mock upload / store file object / simulate drive upload
-    setTimeout(() => {
-      setIsLoading(false);
-      setCurrentName(file.name);
-      // For demo / drive simulation, simulate a downloadable link or local object URL
+    try {
+      const syncConfig = store.getCMS().sync;
+      const isScriptConfigured = Boolean(
+        syncConfig &&
+        syncConfig.webAppUrl &&
+        syncConfig.webAppUrl.trim().startsWith('https://script.google.com')
+      );
+
+      if (isScriptConfigured) {
+        setUploadStatus('Mengunggah ke Google Drive...');
+        const driveRes = await uploadFileToDrive({
+          webAppUrl: syncConfig.webAppUrl,
+          driveFolderId: syncConfig.driveFolderId,
+          file: file,
+        });
+
+        const targetUrl = driveRes.downloadUrl || driveRes.directUrl || driveRes.viewUrl;
+        if (targetUrl) {
+          onChange('drive', targetUrl, file.name);
+          setIsDriveSaved(true);
+          return;
+        }
+      }
+
+      // Fallback: local simulated / storage URL
       const mockDriveUrl = `https://storage.googleapis.com/download/${encodeURIComponent(file.name)}`;
       onChange('drive', mockDriveUrl, file.name);
+      setIsDriveSaved(false);
+    } catch (err: any) {
+      console.warn('Apps Script file upload issue:', err);
+      setError('Gagal mengunggah ke Drive: ' + (err.message || 'Koneksi bermasalah'));
+      const fallbackUrl = `https://storage.googleapis.com/download/${encodeURIComponent(file.name)}`;
+      onChange('drive', fallbackUrl, file.name);
+    } finally {
+      setIsLoading(false);
+      setUploadStatus(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
-    }, 400);
+    }
   };
 
   const handleClear = () => {
     setCurrentName('');
+    setIsDriveSaved(false);
     onChange('tautan', '', '');
     setError(null);
   };
@@ -111,11 +149,11 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
           className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/40 focus:border-[#FF7A1A]"
         />
       ) : (
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2.5">
           <input
             type="file"
             ref={fileInputRef}
-            accept=".pdf,.zip,.skill,.md,.txt,.docx,.xlsx"
+            accept=".pdf,.zip,.skill,.md,.txt,.docx,.xlsx,.csv,.png,.jpg,.jpeg"
             onChange={handleFileChange}
             className="hidden"
           />
@@ -123,15 +161,22 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
             type="button"
             disabled={isLoading}
             onClick={() => fileInputRef.current?.click()}
-            className="h-11 px-4 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-[14px] flex items-center gap-2 transition-colors disabled:opacity-50"
+            className="h-11 px-4 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-[14px] flex items-center gap-2 transition-all disabled:opacity-50"
           >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin text-[#FF7A1A]" />
             ) : (
-              <FileText className="w-4 h-4" />
+              <FileText className="w-4 h-4 text-[#1E4FA8]" />
             )}
-            Pilih Dokumen
+            {isLoading ? 'Sedang Memproses...' : 'Pilih Berkas'}
           </button>
+
+          {isLoading && uploadStatus && (
+            <span className="text-xs font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1 animate-pulse">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              {uploadStatus}
+            </span>
+          )}
         </div>
       )}
 
@@ -141,9 +186,16 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
         <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-[12px]">
           <div className="flex items-center gap-2 overflow-hidden">
             <FileText className="w-4 h-4 text-[#1E4FA8] shrink-0" />
-            <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate max-w-[220px]">
-              {currentName || value}
-            </span>
+            <div className="overflow-hidden">
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate block max-w-[220px]">
+                {currentName || value}
+              </span>
+              {isDriveSaved && (
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" /> Tersimpan di Google Drive
+                </span>
+              )}
+            </div>
           </div>
           <button
             type="button"

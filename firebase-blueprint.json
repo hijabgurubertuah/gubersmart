@@ -140,6 +140,64 @@
         "isRead": { "type": "boolean" }
       },
       "required": ["id", "name", "message"]
+    },
+    "CourseModule": {
+      "title": "CourseModule",
+      "description": "Module within a course",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "courseId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 255 },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "courseId", "title"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "Lesson content blocks and guides",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "moduleId": { "type": "string", "maxLength": 128 },
+        "courseId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 255 },
+        "duration": { "type": "string", "maxLength": 50 },
+        "order": { "type": "number" },
+        "blocks": { "type": "array" }
+      },
+      "required": ["id", "moduleId", "courseId", "title"]
+    },
+    "FileDownload": {
+      "title": "FileDownload",
+      "description": "Downloadable skill library and templates",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 255 },
+        "category": { "type": "string", "maxLength": 80 },
+        "version": { "type": "string", "maxLength": 30 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "source": { "type": "string", "maxLength": 30 },
+        "value": { "type": "string", "maxLength": 1000 },
+        "courseId": { "type": "string", "maxLength": 128 },
+        "downloadCount": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "value"]
+    },
+    "Quiz": {
+      "title": "Quiz",
+      "description": "Module quiz questions and scoring",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "moduleId": { "type": "string", "maxLength": 128 },
+        "courseId": { "type": "string", "maxLength": 128 },
+        "passingScore": { "type": "number" },
+        "questions": { "type": "array" }
+      },
+      "required": ["id", "moduleId", "courseId"]
     }
   },
   "firestore": {
@@ -150,6 +208,22 @@
     "/courses/{courseId}": {
       "schema": "Course",
       "description": "Courses collection"
+    },
+    "/modules/{moduleId}": {
+      "schema": "CourseModule",
+      "description": "Modules collection"
+    },
+    "/lessons/{lessonId}": {
+      "schema": "Lesson",
+      "description": "Lessons collection"
+    },
+    "/downloads/{downloadId}": {
+      "schema": "FileDownload",
+      "description": "Downloads collection"
+    },
+    "/quizzes/{quizId}": {
+      "schema": "Quiz",
+      "description": "Quizzes collection"
     },
     "/members/{memberId}": {
       "schema": "Member",

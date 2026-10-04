@@ -82,7 +82,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         try {
           const driveRes = await uploadFileToDrive({
             webAppUrl: syncConfig.webAppUrl,
-            token: syncConfig.token || 'GUBER_SMART_SECURE_TOKEN_2026',
             driveFolderId: syncConfig.driveFolderId,
             file: file,
             compressedDataUrl: compressed.dataUrl,
@@ -199,6 +198,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 {uploadStatus}
               </span>
+            )}
+
+            {!store.getCMS().sync?.webAppUrl && (
+              <p className="w-full text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                💡 <span className="font-medium">Google Drive Apps Script:</span> Sambungkan di menu <strong>Sinkronisasi</strong> agar gambar otomatis tersimpan permanen ke Drive dan link teksnya tersimpan ke Firebase.
+              </p>
             )}
           </div>
         </div>

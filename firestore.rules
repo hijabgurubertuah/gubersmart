@@ -31,11 +31,39 @@ service cloud.firestore {
       allow write: if isValidId(docId);
     }
 
-    // Courses: Syllabus, modules, lessons text and video URLs
+    // Courses: Syllabus, metadata, and link URLs
     match /courses/{courseId} {
       allow get: if isValidId(courseId);
       allow list: if true;
       allow write: if isValidId(courseId);
+    }
+
+    // Course Modules
+    match /modules/{moduleId} {
+      allow get: if isValidId(moduleId);
+      allow list: if true;
+      allow write: if isValidId(moduleId);
+    }
+
+    // Lessons: Text, steps, guides, and video URLs
+    match /lessons/{lessonId} {
+      allow get: if isValidId(lessonId);
+      allow list: if true;
+      allow write: if isValidId(lessonId);
+    }
+
+    // Downloads / Skill Library
+    match /downloads/{downloadId} {
+      allow get: if isValidId(downloadId);
+      allow list: if true;
+      allow write: if isValidId(downloadId);
+    }
+
+    // Quizzes: Questions and scores
+    match /quizzes/{quizId} {
+      allow get: if isValidId(quizId);
+      allow list: if true;
+      allow write: if isValidId(quizId);
     }
 
     // Members: Account records

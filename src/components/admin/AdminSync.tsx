@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CMSSettings } from '../../types';
 import { APPS_SCRIPT_CODE } from '../../services/appsScript';
-import { Copy, Check, Wifi, AlertCircle, Loader2, Eye, EyeOff, KeyRound, Info, Sparkles } from 'lucide-react';
+import { Copy, Check, Wifi, AlertCircle, Loader2 } from 'lucide-react';
 
 interface AdminSyncProps {
   cms: CMSSettings;
@@ -11,10 +11,8 @@ interface AdminSyncProps {
 
 export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast }) => {
   const [webAppUrl, setWebAppUrl] = useState(cms.sync.webAppUrl || '');
-  const [token, setToken] = useState(cms.sync.token || 'GUBER_SMART_SECURE_TOKEN_2026');
   const [driveFolderId, setDriveFolderId] = useState(cms.sync.driveFolderId || '');
 
-  const [showToken, setShowToken] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connected' | 'failed'>('idle');
@@ -26,31 +24,54 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
     setTimeout(() => setCopied(false), 500);
   };
 
-  const handleSetDefaultToken = () => {
-    setToken('GUBER_SMART_SECURE_TOKEN_2026');
-    onToast('Token bawaan diterapkan', 'info');
-  };
-
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    onUpdateSync({ webAppUrl, token, driveFolderId });
+    onUpdateSync({ webAppUrl, driveFolderId, token: '' });
     onToast('Pengaturan sinkronisasi disimpan');
   };
 
   const handleTestConnection = async () => {
+    if (!webAppUrl || webAppUrl.trim().length < 10) {
+      setConnectionStatus('failed');
+      onToast('Masukkan URL Web App terlebih dahulu', 'error');
+      return;
+    }
+
     setIsTesting(true);
     setConnectionStatus('idle');
 
-    setTimeout(() => {
-      setIsTesting(false);
-      if (webAppUrl.trim().length > 10) {
+    try {
+      const response = await fetch(webAppUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8',
+        },
+        body: JSON.stringify({
+          action: 'ping',
+        }),
+      });
+
+      const resText = await response.text();
+      let resData: any = {};
+      try {
+        resData = JSON.parse(resText);
+      } catch {
+        resData = { status: 'error', message: resText };
+      }
+
+      if (resData.status === 'success') {
         setConnectionStatus('connected');
-        onToast('Koneksi terhubung');
+        onToast('Koneksi ke Google Apps Script & Drive Berhasil!', 'success');
       } else {
         setConnectionStatus('failed');
-        onToast('Gagal terhubung', 'error');
+        onToast(resData.message || 'Apps Script bermasalah', 'error');
       }
-    }, 500);
+    } catch (err: any) {
+      setConnectionStatus('failed');
+      onToast('Gagal menghubungi Apps Script: ' + (err.message || 'Periksa URL Web App'), 'error');
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   return (
@@ -58,28 +79,41 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-            Sinkronisasi Google Drive (Opsional)
+            Sinkronisasi Google Drive
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Fitur jembatan opsional untuk mengunggah berkas/gambar langsung ke Google Drive pribadi Anda.
+            Cukup salin kode di bawah ke Apps Script dan tempel URL Web App. Tanpa token atau kata sandi!
           </p>
         </div>
       </div>
 
-      {/* Info Card explaining Token */}
-      <div className="p-4 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 rounded-[14px] flex items-start gap-3">
-        <Info className="w-5 h-5 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
-        <div className="text-xs text-sky-900 dark:text-sky-200 leading-relaxed space-y-1">
-          <p className="font-semibold text-sm">Apa itu Token Rahasia & Apakah Mempersulit?</p>
-          <p>
-            <strong>Tidak mempersulit sama sekali!</strong> Token Rahasia hanyalah sebuah kata sandi sederhana agar skrip Google Anda tidak bisa diakses orang asing.
+      {/* Troubleshooting Card for Exception: Akses ditolak: DriveApp */}
+      <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-[14px] flex items-start gap-3">
+        <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className="text-xs text-amber-950 dark:text-amber-200 leading-relaxed space-y-2">
+          <p className="font-bold text-sm text-amber-900 dark:text-amber-300">
+            Muncul Error: "Exception: Akses ditolak: DriveApp."? Ini Solusinya:
           </p>
-          <p>
-            Jika Anda memakai skrip bawaan tanpa mengubah variabel token di kode, Anda cukup gunakan nilai default: <code className="bg-sky-100 dark:bg-sky-900 px-1.5 py-0.5 rounded font-mono font-bold">GUBER_SMART_SECURE_TOKEN_2026</code>.
-          </p>
-          <p className="text-sky-700 dark:text-sky-300">
-            <em>Catatan: Firebase Firestore sudah aktif otomatis untuk teks & link tanpa perlu mengisi form ini jika Anda tidak membutuhkan upload berkas Drive.</em>
-          </p>
+          <ol className="list-decimal list-inside space-y-1.5 pl-1">
+            <li>
+              <strong>Penyebab 1: Pengaturan Deploy salah.</strong> Buka menu <em>Deploy &gt; Manage deployments &gt; Edit (ikon pensil)</em>:
+              <ul className="list-disc list-inside pl-4 mt-0.5 text-slate-700 dark:text-slate-300">
+                <li><strong>Execute as (Jalankan sebagai):</strong> Wajib pilih <strong>"Me" (Saya / email Anda)</strong>. <span className="text-rose-600 font-semibold">(Jangan pilih "User accessing")</span>.</li>
+                <li><strong>Who has access (Akses):</strong> Wajib pilih <strong>"Anyone" (Siapa saja)</strong>.</li>
+              </ul>
+            </li>
+            <li>
+              <strong>Penyebab 2: Belum memberikan izin otorisasi Google Drive.</strong> Di editor Google Script:
+              <ul className="list-disc list-inside pl-4 mt-0.5 text-slate-700 dark:text-slate-300">
+                <li>Pilih fungsi <code>initPermissions</code> pada dropdown fungsi di samping tombol Run.</li>
+                <li>Klik tombol <strong>Run (Jalankan)</strong>.</li>
+                <li>Klik <strong>Review Permissions</strong> &gt; Pilih Akun Google &gt; Klik <strong>Advanced (Lanjutan)</strong> &gt; Klik <strong>Go to ... (unsafe)</strong> &gt; Klik <strong>Allow (Izinkan)</strong>.</li>
+              </ul>
+            </li>
+            <li>
+              <strong>Setelah itu buat versi baru:</strong> Klik <em>Deploy &gt; Manage deployments &gt; Edit &gt; Version: New version &gt; Deploy</em>. Salin URL Web App barunya ke bawah ini.
+            </li>
+          </ol>
         </div>
       </div>
 
@@ -87,7 +121,7 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-            Kode Google Apps Script
+            Kode Google Apps Script (Tanpa Token)
           </label>
           <button
             type="button"
@@ -116,55 +150,25 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
             placeholder="https://script.google.com/macros/s/.../exec"
             value={webAppUrl}
             onChange={(e) => setWebAppUrl(e.target.value)}
-            className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-800 dark:text-white"
+            required
+            className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/40"
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                Token Rahasia
-              </label>
-              <button
-                type="button"
-                onClick={handleSetDefaultToken}
-                className="text-xs text-[#1E4FA8] dark:text-sky-400 hover:underline flex items-center gap-1"
-              >
-                <Sparkles className="w-3 h-3" />
-                Pakai Default
-              </button>
-            </div>
-            <div className="relative">
-              <input
-                type={showToken ? 'text' : 'password'}
-                placeholder="GUBER_SMART_SECURE_TOKEN_2026"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-                className="w-full h-11 pl-3.5 pr-10 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-800 dark:text-white"
-              />
-              <button
-                type="button"
-                onClick={() => setShowToken(!showToken)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              ID Folder Google Drive
-            </label>
-            <input
-              type="text"
-              placeholder="Contoh: 1a2b3c4d5e6f7g8h9..."
-              value={driveFolderId}
-              onChange={(e) => setDriveFolderId(e.target.value)}
-              className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-800 dark:text-white"
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            ID Folder Google Drive (Opsional)
+          </label>
+          <input
+            type="text"
+            placeholder="Kosongkan jika ingin disimpan di folder utama Drive (Root)"
+            value={driveFolderId}
+            onChange={(e) => setDriveFolderId(e.target.value)}
+            className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/40"
+          />
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+            Jika dikosongkan, gambar akan otomatis diletakkan di direktori utama Google Drive Anda.
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">

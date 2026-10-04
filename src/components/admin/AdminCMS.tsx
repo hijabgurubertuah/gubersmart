@@ -51,6 +51,13 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
 
   const [isSaving, setIsSaving] = useState(false);
 
+  // Sync formData with remote cms updates from other devices in real-time
+  React.useEffect(() => {
+    if (!isSaving) {
+      setFormData(JSON.parse(JSON.stringify(cms)));
+    }
+  }, [cms, isSaving]);
+
   const handleSave = () => {
     setIsSaving(true);
     onUpdateCMS(formData);

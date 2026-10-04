@@ -318,7 +318,7 @@ export interface CMSSettings {
   };
   sync: {
     webAppUrl: string;
-    token: string;
-    driveFolderId: string;
+    token?: string;
+    driveFolderId?: string;
   };
 }
