@@ -141,7 +141,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       {error && <p className="text-xs font-medium text-rose-600">{error}</p>}
 
       {/* Preview and Delete */}
-      {value && (
+      {value && value.trim() !== '' && (
         <div className="relative inline-block mt-1 group">
           <div className="w-24 h-24 rounded-[12px] overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
             {imgError ? (

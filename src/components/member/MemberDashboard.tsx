@@ -125,13 +125,17 @@ export const MemberDashboard: React.FC<MemberDashboardProps> = ({
                   <div>
                     <div
                       onClick={() => onOpenClass(course.id)}
-                      className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                      className="aspect-video w-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 cursor-pointer flex items-center justify-center"
                     >
-                      <img
-                        src={course.coverValue}
-                        alt={course.name}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      />
+                      {course.coverValue && course.coverValue.trim() !== '' ? (
+                        <img
+                          src={course.coverValue}
+                          alt={course.name}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <BookOpen className="w-10 h-10 text-slate-400" />
+                      )}
                     </div>
 
                     <div className="p-5 space-y-4">

@@ -49,9 +49,13 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
         { id: 'save', label: 'Pratinjau & Simpan' },
       ];
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSave = () => {
+    setIsSaving(true);
     onUpdateCMS(formData);
-    onToast('Pengaturan CMS berhasil disimpan');
+    onToast('Pengaturan CMS berhasil disimpan & disinkronkan ke Firebase');
+    setTimeout(() => setIsSaving(false), 600);
   };
 
   const handleReset = () => {
@@ -69,10 +73,11 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
-            className="h-10 px-5 text-sm font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] active:scale-[0.98] rounded-[12px] flex items-center gap-2 shadow-sm transition-all"
+            disabled={isSaving}
+            className="h-10 px-5 text-sm font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] active:scale-[0.98] disabled:opacity-75 rounded-[12px] flex items-center gap-2 shadow-sm transition-all"
           >
-            <Save className="w-4 h-4" />
-            Simpan Perubahan
+            <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
+            {isSaving ? 'Menyimpan ke Cloud...' : 'Simpan Perubahan'}
           </button>
         </div>
       </div>
@@ -691,10 +696,11 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
               <button
                 type="button"
                 onClick={handleSave}
-                className="min-h-[44px] px-6 text-sm font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] rounded-[12px] flex items-center gap-2 shadow-xs"
+                disabled={isSaving}
+                className="min-h-[44px] px-6 text-sm font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] disabled:opacity-75 rounded-[12px] flex items-center gap-2 shadow-xs"
               >
-                <Save className="w-4 h-4" />
-                Simpan
+                <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
+                {isSaving ? 'Menyimpan...' : 'Simpan'}
               </button>
             </div>
           </div>
@@ -714,10 +720,11 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
             <button
               type="button"
               onClick={handleSave}
-              className="min-h-[42px] px-6 text-sm font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] active:scale-[0.98] rounded-[12px] flex items-center gap-2 shadow-xs transition-all"
+              disabled={isSaving}
+              className="min-h-[42px] px-6 text-sm font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] active:scale-[0.98] disabled:opacity-75 rounded-[12px] flex items-center gap-2 shadow-xs transition-all"
             >
-              <Save className="w-4 h-4" />
-              Simpan Perubahan
+              <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
+              {isSaving ? 'Menyimpan ke Cloud...' : 'Simpan Perubahan'}
             </button>
           </div>
         )}

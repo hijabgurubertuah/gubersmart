@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Course } from '../../types';
 import { formatRupiah } from '../../utils/crypto';
-import { Search, ExternalLink } from 'lucide-react';
+import { Search, ExternalLink, BookOpen } from 'lucide-react';
 
 interface ClassesPageProps {
   courses: Course[];
@@ -61,13 +61,17 @@ export const ClassesPage: React.FC<ClassesPageProps> = ({
               <div>
                 <div
                   onClick={() => onOpenClassDetail(course.id)}
-                  className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                  className="aspect-video w-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 cursor-pointer flex items-center justify-center"
                 >
-                  <img
-                    src={course.coverValue}
-                    alt={course.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                  {course.coverValue && course.coverValue.trim() !== '' ? (
+                    <img
+                      src={course.coverValue}
+                      alt={course.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <BookOpen className="w-10 h-10 text-slate-400 group-hover:scale-110 transition-transform" />
+                  )}
                 </div>
                 <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">

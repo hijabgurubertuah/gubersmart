@@ -3,7 +3,7 @@ import { Course, FileSource } from '../../types';
 import { ImageUploader } from '../common/ImageUploader';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { formatRupiah, generateId } from '../../utils/crypto';
-import { Plus, Edit2, Trash2, Search, ArrowUpDown, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, ArrowUpDown, Eye, EyeOff, BookOpen } from 'lucide-react';
 
 interface AdminClassesProps {
   courses: Course[];
@@ -312,8 +312,12 @@ export const AdminClasses: React.FC<AdminClassesProps> = ({
                 className="bg-white dark:bg-slate-900 rounded-[14px] p-4 sm:p-5 border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div className="flex items-start sm:items-center gap-3.5">
-                  <div className="w-16 h-12 rounded-[10px] overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0">
-                    <img src={course.coverValue} alt="" className="w-full h-full object-cover" />
+                  <div className="w-16 h-12 rounded-[10px] overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center">
+                    {course.coverValue && course.coverValue.trim() !== '' ? (
+                      <img src={course.coverValue} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <BookOpen className="w-6 h-6 text-slate-400" />
+                    )}
                   </div>
                   <div className="space-y-0.5">
                     <div className="flex items-center gap-2">

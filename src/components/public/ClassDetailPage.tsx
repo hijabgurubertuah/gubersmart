@@ -68,12 +68,16 @@ export const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
         {/* Right card (Buy box) */}
         <div className="bg-white dark:bg-slate-900 rounded-[14px] p-6 border border-slate-200 dark:border-slate-800 shadow-lg space-y-5 sticky top-24">
-          <div className="aspect-video w-full rounded-[10px] overflow-hidden bg-slate-100 dark:bg-slate-800">
-            <img
-              src={course.coverValue}
-              alt={course.name}
-              className="w-full h-full object-cover"
-            />
+          <div className="aspect-video w-full rounded-[10px] overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
+            {course.coverValue && course.coverValue.trim() !== '' ? (
+              <img
+                src={course.coverValue}
+                alt={course.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <BookOpen className="w-12 h-12 text-slate-400" />
+            )}
           </div>
 
           <div>

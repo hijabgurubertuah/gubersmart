@@ -130,6 +130,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
         {lesson.blocks.map((block: ContentBlock, idx: number) => {
           switch (block.type) {
             case 'youtube':
+              if (!block.videoUrl || block.videoUrl.trim() === '') return null;
               return (
                 <div key={idx} className="w-full aspect-video rounded-[14px] overflow-hidden shadow-md bg-black">
                   <iframe
@@ -198,13 +199,13 @@ export const LessonView: React.FC<LessonViewProps> = ({
                                 {step.description}
                               </p>
 
-                              {step.imageUrl && (
+                              {step.imageUrl && step.imageUrl.trim() !== '' && (
                                 <div className="mt-3 rounded-[10px] overflow-hidden max-w-md border border-slate-100 dark:border-slate-800">
                                   <img src={step.imageUrl} alt="" className="w-full object-cover" />
                                 </div>
                               )}
 
-                              {step.videoUrl && (
+                              {step.videoUrl && step.videoUrl.trim() !== '' && (
                                 <div className="mt-3 aspect-video max-w-md rounded-[10px] overflow-hidden bg-black">
                                   <iframe
                                     src={getYoutubeEmbed(step.videoUrl, step.startSeconds)}
@@ -311,6 +312,7 @@ export const LessonView: React.FC<LessonViewProps> = ({
               );
 
             case 'image':
+              if (!block.value || block.value.trim() === '') return null;
               return (
                 <div key={idx} className="space-y-2">
                   <div className="rounded-[14px] overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[500px]">

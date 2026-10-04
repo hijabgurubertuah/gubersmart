@@ -26,56 +26,64 @@ service cloud.firestore {
     }
 
     // CMS Settings: Text, Navigation, Theme and Link URLs
-    match /cms/settings {
+    match /cms/{docId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isValidId(docId);
     }
 
     // Courses: Syllabus, modules, lessons text and video URLs
     match /courses/{courseId} {
-      allow read: if isValidId(courseId);
+      allow get: if isValidId(courseId);
+      allow list: if true;
       allow write: if isValidId(courseId);
     }
 
     // Members: Account records
     match /members/{memberId} {
-      allow read: if isValidId(memberId);
+      allow get: if isValidId(memberId);
+      allow list: if true;
       allow write: if isValidId(memberId);
     }
 
     // Learner Progress: Completed lesson IDs and quiz scores
     match /progress/{memberId} {
-      allow read: if isValidId(memberId);
+      allow get: if isValidId(memberId);
+      allow list: if true;
       allow write: if isValidId(memberId);
     }
 
     // Announcements
     match /announcements/{announcementId} {
-      allow read: if isValidId(announcementId);
+      allow get: if isValidId(announcementId);
+      allow list: if true;
       allow write: if isValidId(announcementId);
     }
 
     // Testimonials: Text and avatar URLs
     match /testimonials/{testimonialId} {
-      allow read: if isValidId(testimonialId);
+      allow get: if isValidId(testimonialId);
+      allow list: if true;
       allow write: if isValidId(testimonialId);
     }
 
     // Examples: App names, descriptions, and demo URLs
     match /examples/{exampleId} {
-      allow read: if isValidId(exampleId);
+      allow get: if isValidId(exampleId);
+      allow list: if true;
       allow write: if isValidId(exampleId);
     }
 
     // FAQs: Questions and Answers
     match /faqs/{faqId} {
-      allow read: if isValidId(faqId);
+      allow get: if isValidId(faqId);
+      allow list: if true;
       allow write: if isValidId(faqId);
     }
 
     // Contact Inquiries: Text messages only
     match /contact_messages/{messageId} {
-      allow read: if isValidId(messageId);
+      allow get: if isValidId(messageId);
+      allow list: if true;
       allow create: if isValidId(messageId) &&
         incoming().name is string && incoming().name.size() <= 150 &&
         incoming().message is string && incoming().message.size() <= 3000;

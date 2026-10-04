@@ -12,6 +12,8 @@ import {
   Check,
   ShieldCheck,
   Zap,
+  BookOpen,
+  LayoutGrid,
 } from 'lucide-react';
 
 interface HomePageProps {
@@ -237,13 +239,17 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <div>
                   <div
                     onClick={() => onOpenClassDetail(course.id)}
-                    className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer"
+                    className="aspect-video w-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 cursor-pointer flex items-center justify-center"
                   >
-                    <img
-                      src={course.coverValue}
-                      alt={course.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    {course.coverValue && course.coverValue.trim() !== '' ? (
+                      <img
+                        src={course.coverValue}
+                        alt={course.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <BookOpen className="w-10 h-10 text-slate-400 group-hover:scale-110 transition-transform" />
+                    )}
                   </div>
                   <div className="p-5 space-y-3">
                     <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -319,12 +325,16 @@ export const HomePage: React.FC<HomePageProps> = ({
                 className="bg-white dark:bg-slate-900 rounded-[14px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
               >
                 <div>
-                  <div className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-                    <img
-                      src={app.imageUrl}
-                      alt={app.name}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                    />
+                  <div className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                    {app.imageUrl && app.imageUrl.trim() !== '' ? (
+                      <img
+                        src={app.imageUrl}
+                        alt={app.name}
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <LayoutGrid className="w-8 h-8 text-slate-400" />
+                    )}
                   </div>
                   <div className="p-4 space-y-2">
                     <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded-md bg-blue-50 dark:bg-blue-950 text-[#1E4FA8] dark:text-blue-300">
@@ -383,11 +393,17 @@ export const HomePage: React.FC<HomePageProps> = ({
                 </div>
 
                 <div className="flex items-center gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <img
-                    src={item.avatarUrl}
-                    alt={item.name}
-                    className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
-                  />
+                  {item.avatarUrl && item.avatarUrl.trim() !== '' ? (
+                    <img
+                      src={item.avatarUrl}
+                      alt={item.name}
+                      className="w-10 h-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#0B2A5B] text-white flex items-center justify-center font-bold text-sm">
+                      {item.name.charAt(0)}
+                    </div>
+                  )}
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                       {item.name}

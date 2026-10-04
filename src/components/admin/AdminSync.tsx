@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CMSSettings } from '../../types';
 import { APPS_SCRIPT_CODE } from '../../services/appsScript';
-import { Copy, Check, Wifi, AlertCircle, Loader2 } from 'lucide-react';
+import { Copy, Check, Wifi, AlertCircle, Loader2, Eye, EyeOff, KeyRound, Info, Sparkles } from 'lucide-react';
 
 interface AdminSyncProps {
   cms: CMSSettings;
@@ -11,9 +11,10 @@ interface AdminSyncProps {
 
 export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast }) => {
   const [webAppUrl, setWebAppUrl] = useState(cms.sync.webAppUrl || '');
-  const [token, setToken] = useState(cms.sync.token || '');
+  const [token, setToken] = useState(cms.sync.token || 'GUBER_SMART_SECURE_TOKEN_2026');
   const [driveFolderId, setDriveFolderId] = useState(cms.sync.driveFolderId || '');
 
+  const [showToken, setShowToken] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connected' | 'failed'>('idle');
@@ -22,7 +23,12 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
     navigator.clipboard.writeText(APPS_SCRIPT_CODE);
     setCopied(true);
     onToast('Kode berhasil disalin');
-    setTimeout(() => setCopied(false), 100);
+    setTimeout(() => setCopied(false), 500);
+  };
+
+  const handleSetDefaultToken = () => {
+    setToken('GUBER_SMART_SECURE_TOKEN_2026');
+    onToast('Token bawaan diterapkan', 'info');
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -44,15 +50,37 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
         setConnectionStatus('failed');
         onToast('Gagal terhubung', 'error');
       }
-    }, 600);
+    }, 500);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-          Sinkronisasi
-        </h2>
+        <div>
+          <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
+            Sinkronisasi Google Drive (Opsional)
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Fitur jembatan opsional untuk mengunggah berkas/gambar langsung ke Google Drive pribadi Anda.
+          </p>
+        </div>
+      </div>
+
+      {/* Info Card explaining Token */}
+      <div className="p-4 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 rounded-[14px] flex items-start gap-3">
+        <Info className="w-5 h-5 text-sky-600 dark:text-sky-400 shrink-0 mt-0.5" />
+        <div className="text-xs text-sky-900 dark:text-sky-200 leading-relaxed space-y-1">
+          <p className="font-semibold text-sm">Apa itu Token Rahasia & Apakah Mempersulit?</p>
+          <p>
+            <strong>Tidak mempersulit sama sekali!</strong> Token Rahasia hanyalah sebuah kata sandi sederhana agar skrip Google Anda tidak bisa diakses orang asing.
+          </p>
+          <p>
+            Jika Anda memakai skrip bawaan tanpa mengubah variabel token di kode, Anda cukup gunakan nilai default: <code className="bg-sky-100 dark:bg-sky-900 px-1.5 py-0.5 rounded font-mono font-bold">GUBER_SMART_SECURE_TOKEN_2026</code>.
+          </p>
+          <p className="text-sky-700 dark:text-sky-300">
+            <em>Catatan: Firebase Firestore sudah aktif otomatis untuk teks & link tanpa perlu mengisi form ini jika Anda tidak membutuhkan upload berkas Drive.</em>
+          </p>
+        </div>
       </div>
 
       {/* Code Box */}
@@ -81,38 +109,60 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
       <form onSubmit={handleSave} className="bg-white dark:bg-slate-900 rounded-[14px] p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-4">
         <div>
           <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-            URL Web App *
+            URL Web App (dari Deployment Apps Script)
           </label>
           <input
             type="url"
+            placeholder="https://script.google.com/macros/s/.../exec"
             value={webAppUrl}
             onChange={(e) => setWebAppUrl(e.target.value)}
-            className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
+            className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-800 dark:text-white"
           />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Token Rahasia *
-            </label>
-            <input
-              type="password"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
-            />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Token Rahasia
+              </label>
+              <button
+                type="button"
+                onClick={handleSetDefaultToken}
+                className="text-xs text-[#1E4FA8] dark:text-sky-400 hover:underline flex items-center gap-1"
+              >
+                <Sparkles className="w-3 h-3" />
+                Pakai Default
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                type={showToken ? 'text' : 'password'}
+                placeholder="GUBER_SMART_SECURE_TOKEN_2026"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                className="w-full h-11 pl-3.5 pr-10 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-800 dark:text-white"
+              />
+              <button
+                type="button"
+                onClick={() => setShowToken(!showToken)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              ID Folder Drive *
+              ID Folder Google Drive
             </label>
             <input
               type="text"
+              placeholder="Contoh: 1a2b3c4d5e6f7g8h9..."
               value={driveFolderId}
               onChange={(e) => setDriveFolderId(e.target.value)}
-              className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
+              className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-800 dark:text-white"
             />
           </div>
         </div>
@@ -123,7 +173,7 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
               type="button"
               disabled={isTesting}
               onClick={handleTestConnection}
-              className="h-10 px-4 text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-[12px] flex items-center gap-2 transition-colors disabled:opacity-50"
+              className="h-10 px-4 text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-[12px] flex items-center gap-2 transition-colors disabled:opacity-50"
             >
               {isTesting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />}
               Uji Koneksi
@@ -146,12 +196,13 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
 
           <button
             type="submit"
-            className="min-h-[44px] px-6 text-sm font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] rounded-[12px] shadow-xs"
+            className="min-h-[44px] px-6 text-sm font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] active:scale-[0.98] rounded-[12px] shadow-xs transition-all"
           >
-            Simpan
+            Simpan Konfigurasi
           </button>
         </div>
       </form>
     </div>
   );
 };
+

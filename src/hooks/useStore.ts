@@ -8,10 +8,10 @@ export interface ToastItem {
 }
 
 export function useStore() {
-  // External store subscription
-  const snapshot = useSyncExternalStore(
+  // External store subscription tracking store version for instant reactivity
+  useSyncExternalStore(
     (callback) => store.subscribe(callback),
-    () => store.getAuth().lastActive + '_' + store.getCMS().identity.appName + '_' + store.getCourses().length
+    () => store.getVersion()
   );
 
   // Network online/offline
@@ -54,7 +54,7 @@ export function useStore() {
 
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 100);
+    }, 500); // 0.5 detik
   }, []);
 
   const dismissToast = useCallback((id: string) => {

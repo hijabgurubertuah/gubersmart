@@ -135,7 +135,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-2.5 focus:outline-none group text-left"
           >
             <div className="w-9 h-9 rounded-[10px] bg-[#0B2A5B] flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform overflow-hidden shrink-0">
-              {cms.identity.logoUrl ? (
+              {cms.identity.logoUrl && cms.identity.logoUrl.trim() !== '' ? (
                 <img src={cms.identity.logoUrl} alt="" className="w-full h-full object-cover" />
               ) : (
                 <span className="font-heading font-bold text-lg text-[#FF7A1A]">G</span>

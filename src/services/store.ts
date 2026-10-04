@@ -95,9 +95,14 @@ class StoreManager {
   private passwords: PasswordConfig;
   private auth: AuthState;
   private syncHandlers?: StoreSyncHandlers;
+  private version: number = 1;
 
   private listeners: Set<() => void> = new Set();
   private inactivityTimer: any = null;
+
+  public getVersion(): number {
+    return this.version;
+  }
 
   public setSyncHandlers(handlers: StoreSyncHandlers): void {
     this.syncHandlers = handlers;
@@ -150,6 +155,7 @@ class StoreManager {
   }
 
   private notify(): void {
+    this.version++;
     this.listeners.forEach((listener) => {
       try {
         listener();

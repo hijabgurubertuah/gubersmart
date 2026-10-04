@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { AppExample, Testimonial, FaqItem, Announcement, ContactMessage } from '../../types';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { generateId, formatDate } from '../../utils/crypto';
-import { Plus, Edit2, Trash2, Eye, EyeOff, Search, Star, MessageSquare } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, EyeOff, Search, Star, MessageSquare, LayoutGrid } from 'lucide-react';
 
 interface AdminSimpleCrudProps {
   type: 'examples' | 'testimonials' | 'faq' | 'announcements' | 'contacts';
@@ -414,8 +414,12 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
                 className="p-4 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 shadow-xs flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-10 rounded-[8px] overflow-hidden bg-slate-100 shrink-0">
-                    <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+                  <div className="w-12 h-10 rounded-[8px] overflow-hidden bg-slate-100 shrink-0 flex items-center justify-center">
+                    {item.imageUrl && item.imageUrl.trim() !== '' ? (
+                      <img src={item.imageUrl} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <LayoutGrid className="w-5 h-5 text-slate-400" />
+                    )}
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">{item.name}</h4>

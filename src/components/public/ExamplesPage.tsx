@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AppExample } from '../../types';
-import { Search, ExternalLink } from 'lucide-react';
+import { Search, ExternalLink, LayoutGrid } from 'lucide-react';
 
 interface ExamplesPageProps {
   examples: AppExample[];
@@ -79,12 +79,16 @@ export const ExamplesPage: React.FC<ExamplesPageProps> = ({ examples }) => {
               className="bg-white dark:bg-slate-900 rounded-[14px] overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg transition-all flex flex-col justify-between group"
             >
               <div>
-                <div className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
-                  <img
-                    src={app.imageUrl}
-                    alt={app.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                <div className="aspect-video w-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                  {app.imageUrl && app.imageUrl.trim() !== '' ? (
+                    <img
+                      src={app.imageUrl}
+                      alt={app.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <LayoutGrid className="w-10 h-10 text-slate-400" />
+                  )}
                 </div>
                 <div className="p-5 space-y-2">
                   <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-md bg-blue-50 dark:bg-blue-950 text-[#1E4FA8] dark:text-blue-300">
