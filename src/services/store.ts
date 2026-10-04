@@ -125,6 +125,12 @@ class StoreManager {
 
   constructor() {
     this.cms = this.load(STORAGE_KEYS.CMS, INITIAL_CMS_SETTINGS);
+    if (!this.cms.sync) {
+      this.cms.sync = { webAppUrl: '', driveFolderId: '1IHIoPGIlz551QNS9Ww2MK594LwBT7lEj', token: '' };
+    } else if (!this.cms.sync.driveFolderId || this.cms.sync.driveFolderId === 'YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE') {
+      this.cms.sync.driveFolderId = '1IHIoPGIlz551QNS9Ww2MK594LwBT7lEj';
+      this.save(STORAGE_KEYS.CMS, this.cms);
+    }
     this.courses = this.load(STORAGE_KEYS.COURSES, INITIAL_COURSES);
     this.modules = this.load(STORAGE_KEYS.MODULES, INITIAL_MODULES);
     this.lessons = this.load(STORAGE_KEYS.LESSONS, INITIAL_LESSONS);

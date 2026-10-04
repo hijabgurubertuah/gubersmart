@@ -6,7 +6,7 @@ export const APPS_SCRIPT_CODE = `/**
  * Tanpa token / password - langsung pakai cukup dengan URL Web App.
  */
 
-const DRIVE_FOLDER_ID = "YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE";
+const DRIVE_FOLDER_ID = "1IHIoPGIlz551QNS9Ww2MK594LwBT7lEj";
 
 function doPost(e) {
   try {

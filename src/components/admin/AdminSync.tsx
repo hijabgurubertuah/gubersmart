@@ -11,7 +11,7 @@ interface AdminSyncProps {
 
 export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast }) => {
   const [webAppUrl, setWebAppUrl] = useState(cms.sync.webAppUrl || '');
-  const [driveFolderId, setDriveFolderId] = useState(cms.sync.driveFolderId || '');
+  const [driveFolderId, setDriveFolderId] = useState(cms.sync.driveFolderId || '1IHIoPGIlz551QNS9Ww2MK594LwBT7lEj');
 
   const [copied, setCopied] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
