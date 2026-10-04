@@ -1,0 +1,6 @@
+{
+  "name": "Guber Smart",
+  "description": "Portal belajar dan landing page penjualan bikin aplikasi web sendiri tanpa koding.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

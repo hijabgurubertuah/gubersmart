@@ -1,0 +1,160 @@
+import React, { useState, useRef } from 'react';
+import { FileSource } from '../../types';
+import { Trash2, Loader2, FileText } from 'lucide-react';
+
+interface FileUploaderProps {
+  label: string;
+  source: FileSource;
+  value: string;
+  fileName?: string;
+  onChange: (source: FileSource, value: string, fileName?: string) => void;
+  required?: boolean;
+}
+
+export const FileUploader: React.FC<FileUploaderProps> = ({
+  label,
+  source,
+  value,
+  fileName,
+  onChange,
+  required = false,
+}) => {
+  const [activeTab, setActiveTab] = useState<FileSource>(source || 'tautan');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentName, setCurrentName] = useState(fileName || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTabSwitch = (tab: FileSource) => {
+    setActiveTab(tab);
+    setError(null);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check size max 20MB
+    if (file.size > 20 * 1024 * 1024) {
+      setError('Ukuran file melebihi batas');
+      return;
+    }
+
+    // Check extension
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    const validExts = ['pdf', 'zip', 'skill', 'md', 'txt', 'docx', 'xlsx'];
+    if (!ext || !validExts.includes(ext)) {
+      setError('Format file tidak didukung');
+      return;
+    }
+
+    setError(null);
+    setIsLoading(true);
+
+    // Mock upload / store file object / simulate drive upload
+    setTimeout(() => {
+      setIsLoading(false);
+      setCurrentName(file.name);
+      // For demo / drive simulation, simulate a downloadable link or local object URL
+      const mockDriveUrl = `https://storage.googleapis.com/download/${encodeURIComponent(file.name)}`;
+      onChange('drive', mockDriveUrl, file.name);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }, 400);
+  };
+
+  const handleClear = () => {
+    setCurrentName('');
+    onChange('tautan', '', '');
+    setError(null);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+          {label} {required && '*'}
+        </label>
+        <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs font-medium">
+          <button
+            type="button"
+            onClick={() => handleTabSwitch('tautan')}
+            className={`px-2.5 py-1 rounded-md transition-all ${
+              activeTab === 'tautan'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-semibold'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+            }`}
+          >
+            Tautan
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabSwitch('drive')}
+            className={`px-2.5 py-1 rounded-md transition-all ${
+              activeTab === 'drive'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-semibold'
+                : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
+            }`}
+          >
+            Unggah
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'tautan' ? (
+        <input
+          type="url"
+          value={value}
+          onChange={(e) => {
+            onChange('tautan', e.target.value, currentName);
+          }}
+          placeholder="https://..."
+          className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/40 focus:border-[#FF7A1A]"
+        />
+      ) : (
+        <div className="flex items-center gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".pdf,.zip,.skill,.md,.txt,.docx,.xlsx"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <button
+            type="button"
+            disabled={isLoading}
+            onClick={() => fileInputRef.current?.click()}
+            className="h-11 px-4 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-[14px] flex items-center gap-2 transition-colors disabled:opacity-50"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-[#FF7A1A]" />
+            ) : (
+              <FileText className="w-4 h-4" />
+            )}
+            Pilih Dokumen
+          </button>
+        </div>
+      )}
+
+      {error && <p className="text-xs font-medium text-rose-600">{error}</p>}
+
+      {value && (
+        <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-[12px]">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <FileText className="w-4 h-4 text-[#1E4FA8] shrink-0" />
+            <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate max-w-[220px]">
+              {currentName || value}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+            aria-label="Hapus file"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};

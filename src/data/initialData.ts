@@ -1,0 +1,868 @@
+import {
+  Course,
+  CourseModule,
+  Lesson,
+  FileDownload,
+  Quiz,
+  Member,
+  UserProgress,
+  AppExample,
+  Testimonial,
+  FaqItem,
+  Announcement,
+  CMSSettings,
+  ContactMessage,
+  ActivityLog,
+} from '../types';
+
+export const INITIAL_CMS_SETTINGS: CMSSettings = {
+  identity: {
+    appName: 'Guber Smart',
+    tagline: 'Dari ide jadi aplikasi, selangkah demi selangkah',
+    heroTitle: 'Bikin Aplikasi Web Sendiri, Tanpa Koding',
+    heroSubtitle: 'Bangun aplikasi web fungsional untuk bisnis, kantor, atau portofolio pribadi hanya dengan instruksi bahasa manusia.',
+    lynkUrl: 'https://lynk.id/guber-smart',
+    whatsapp: '6281234567890',
+    logoUrl: '/favicon.svg',
+    faviconUrl: '/favicon.svg',
+    metaTitle: 'Guber Smart - Bikin Aplikasi Web Sendiri, Tanpa Koding',
+    metaDescription: 'Portal belajar dan landing page bikin aplikasi web sendiri tanpa koding. Dari ide jadi aplikasi, selangkah demi selangkah.',
+  },
+  theme: {
+    primaryColor: '#0B2A5B',
+    secondaryColor: '#1E4FA8',
+    accentColor: '#FF7A1A',
+    backgroundColor: '#F7F9FC',
+    textColor: '#0F172A',
+    fontFamily: 'Inter',
+    borderRadius: 14,
+    darkMode: false,
+  },
+  navigation: [
+    { id: 'nav_home', label: 'Beranda', path: '/', icon: 'Home', isVisible: true, order: 1 },
+    { id: 'nav_classes', label: 'Kelas', path: '/kelas', icon: 'BookOpen', isVisible: true, order: 2 },
+    { id: 'nav_examples', label: 'Contoh Aplikasi', path: '/contoh', icon: 'LayoutGrid', isVisible: true, order: 3 },
+    { id: 'nav_about', label: 'Tentang', path: '/tentang', icon: 'Info', isVisible: true, order: 4 },
+    { id: 'nav_contact', label: 'Kontak', path: '/kontak', icon: 'MessageCircle', isVisible: true, order: 5 },
+  ],
+  buttons: [
+    { id: 'btn_hero_class', label: 'Lihat Kelas', url: '/kelas', color: '#FF7A1A', isVisible: true },
+    { id: 'btn_hero_contact', label: 'Hubungi Kami', url: '/kontak', color: '#1E4FA8', isVisible: true },
+    { id: 'btn_buy', label: 'Beli Sekarang', url: '', color: '#FF7A1A', isVisible: true },
+    { id: 'btn_open_app', label: 'Buka Aplikasi', url: '', color: '#0B2A5B', isVisible: true },
+  ],
+  sections: [
+    { id: 'sec_hero', title: 'Banner Utama', description: 'Pengantar dan judul utama', isVisible: true, order: 1 },
+    { id: 'sec_benefits', title: 'Manfaat', description: 'Keunggulan belajar di Guber Smart', isVisible: true, order: 2 },
+    { id: 'sec_how', title: 'Cara Belajar', description: '3 langkah praktis dari nol', isVisible: true, order: 3 },
+    { id: 'sec_featured', title: 'Kelas Unggulan', description: 'Daftar kelas terlaris', isVisible: true, order: 4 },
+    { id: 'sec_examples', title: 'Sorotan Aplikasi', description: 'Contoh nyata hasil karya', isVisible: true, order: 5 },
+    { id: 'sec_testimonials', title: 'Testimoni', description: 'Ulasan asli para member', isVisible: true, order: 6 },
+    { id: 'sec_faq', title: 'Tanya Jawab', description: 'Pertanyaan sering diajukan', isVisible: true, order: 7 },
+    { id: 'sec_cta', title: 'Ajakan Beli', description: 'Bagian penutup ajakan bergabung', isVisible: true, order: 8 },
+  ],
+  pages: [
+    {
+      id: 'page_syarat',
+      slug: 'syarat-ketentuan',
+      title: 'Syarat dan Ketentuan',
+      content: 'Materi dan file skill yang disediakan di Guber Smart ditujukan untuk pembelajaran pribadi atau usaha member.',
+      isVisible: true,
+    },
+    {
+      id: 'page_privasi',
+      slug: 'kebijakan-privasi',
+      title: 'Kebijakan Privasi',
+      content: 'Kami menjaga kerahasiaan data akses dan nomor kontak member dengan penuh tanggung jawab.',
+      isVisible: true,
+    },
+  ],
+  features: {
+    testimonials: true,
+    faq: true,
+    contactForm: true,
+    floatingWhatsApp: true,
+    quiz: true,
+    certificate: true,
+    personalNotes: true,
+    announcements: true,
+    skillLibrary: true,
+    stepGuides: true,
+  },
+  media: {
+    promoVideoUrl: 'https://www.youtube.com/watch?v=ScMzIvxBSi4',
+    gallery: [
+      'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80',
+    ],
+  },
+  footer: {
+    address: 'Jakarta Selatan, DKI Jakarta, Indonesia',
+    phone: '+62 812-3456-7890',
+    email: 'gubersmart@gmail.com',
+    hours: 'Senin - Sabtu: 09.00 - 17.00 WIB',
+    social: {
+      instagram: 'https://instagram.com/gubersmart',
+      youtube: 'https://youtube.com/@gubersmart',
+      tiktok: 'https://tiktok.com/@gubersmart',
+      github: 'https://github.com/gubersmart',
+    },
+    copyright: '© 2026 Guber Smart. Hak cipta dilindungi.',
+  },
+  sync: {
+    webAppUrl: '',
+    token: '',
+    driveFolderId: '',
+  },
+};
+
+export const INITIAL_COURSES: Course[] = [
+  {
+    id: 'course_1',
+    name: 'Bikin Website Tanpa Koding',
+    summary: 'Kuasai pembuatan landing page dan website profil profesional hanya dalam hitungan jam.',
+    description: 'Panduan lengkap dan praktis untuk membangun website impian Anda dari awal hingga siap diluncurkan ke internet tanpa menulis sintaks koding satu baris pun.',
+    price: 149000,
+    lynkUrl: 'https://lynk.id/guber-smart/website-tanpa-koding',
+    coverSource: 'tautan',
+    coverValue: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
+    status: 'tampil',
+    order: 1,
+    duration: '3 Jam 45 Menit',
+    modulesCount: 4,
+    lessonsCount: 12,
+    whatYouWillLearn: [
+      'Menyusun struktur landing page yang menjual',
+      'Memilih desain dan tata letak responsif untuk HP',
+      'Mengintegrasikan tombol kontak WhatsApp langsung',
+      'Menerbitkan website ke domain sendiri secara gratis',
+    ],
+  },
+  {
+    id: 'course_2',
+    name: 'Aplikasi Absensi Sendiri dengan AI',
+    summary: 'Rancang sistem pencatatan kehadiran karyawan atau siswa otomatis berbasis GPS dan foto selfie.',
+    description: 'Pelajari metode modern membangun sistem absensi mandiri yang aman, cepat, dan siap pakai untuk kantor, sekolah, atau komunitas.',
+    price: 199000,
+    lynkUrl: 'https://lynk.id/guber-smart/absensi-ai',
+    coverSource: 'tautan',
+    coverValue: 'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80',
+    status: 'tampil',
+    order: 2,
+    duration: '4 Jam 20 Menit',
+    modulesCount: 3,
+    lessonsCount: 10,
+    whatYouWillLearn: [
+      'Alur kerja absensi digital dengan foto selfie',
+      'Deteksi radius lokasi kantor otomatis',
+      'Rekap data kehadiran langsung ke spreadsheet',
+      'Ekspor laporan bulanan PDF dalam sekali klik',
+    ],
+  },
+  {
+    id: 'course_3',
+    name: 'Toko Online Siap Jual',
+    summary: 'Bangun katalog produk interaktif dengan integrasi keranjang belanja dan checkout WhatsApp.',
+    description: 'Mulai jualan produk fisik atau digital Anda dengan toko online mandiri yang responsif di HP dan langsung terhubung ke chat penjualan.',
+    price: 249000,
+    lynkUrl: 'https://lynk.id/guber-smart/toko-online',
+    coverSource: 'tautan',
+    coverValue: 'https://images.unsplash.com/photo-1556742049-0a67e55722c0?auto=format&fit=crop&w=800&q=80',
+    status: 'tampil',
+    order: 3,
+    duration: '5 Jam 15 Menit',
+    modulesCount: 4,
+    lessonsCount: 14,
+    whatYouWillLearn: [
+      'Menampilkan katalog produk dengan filter kategori',
+      'Sistem keranjang belanja lokal tanpa server rumit',
+      'Format pesan checkout otomatis ke WhatsApp admin',
+      'Manajemen stok sederhana dan label diskon',
+    ],
+  },
+];
+
+export const INITIAL_MODULES: CourseModule[] = [
+  // Course 1 Modules
+  { id: 'mod_1_1', courseId: 'course_1', title: 'Modul 1: Fondasi Website Modern', order: 1 },
+  { id: 'mod_1_2', courseId: 'course_1', title: 'Modul 2: Desain Visual dan Tata Letak HP', order: 2 },
+  { id: 'mod_1_3', courseId: 'course_1', title: 'Modul 3: Formulir Kontak dan Tombol Aksi', order: 3 },
+  { id: 'mod_1_4', courseId: 'course_1', title: 'Modul 4: Publikasi dan Peluncuran', order: 4 },
+
+  // Course 2 Modules
+  { id: 'mod_2_1', courseId: 'course_2', title: 'Modul 1: Arsitektur Absensi dan Alur Pengguna', order: 1 },
+  { id: 'mod_2_2', courseId: 'course_2', title: 'Modul 2: Implementasi GPS dan Kamera Selfie', order: 2 },
+  { id: 'mod_2_3', courseId: 'course_2', title: 'Modul 3: Rekap Kehadiran dan Unduh Laporan', order: 3 },
+
+  // Course 3 Modules
+  { id: 'mod_3_1', courseId: 'course_3', title: 'Modul 1: Struktur Katalog Produk', order: 1 },
+  { id: 'mod_3_2', courseId: 'course_3', title: 'Modul 2: Keranjang Belanja Interaktif', order: 2 },
+  { id: 'mod_3_3', courseId: 'course_3', title: 'Modul 3: Checkout Pesan WhatsApp Terformat', order: 3 },
+  { id: 'mod_3_4', courseId: 'course_3', title: 'Modul 4: Pengujian di Layar HP', order: 4 },
+];
+
+export const INITIAL_LESSONS: Lesson[] = [
+  // Course 1 Lessons
+  {
+    id: 'les_1_1_1',
+    moduleId: 'mod_1_1',
+    courseId: 'course_1',
+    title: 'Pengenalan Arsitektur Tanpa Koding',
+    duration: '15 Menit',
+    order: 1,
+    blocks: [
+      {
+        type: 'youtube',
+        videoUrl: 'https://www.youtube.com/watch?v=ScMzIvxBSi4',
+        startSeconds: 0,
+      },
+      {
+        type: 'text',
+        content: 'Membangun aplikasi web di era modern kini dapat dilakukan secara langsung dengan memanfaatkan kecerdasan buatan dan platform visual. Pemula dapat langsung fokus pada fungsi dan pengalaman pengguna tanpa harus mempelajari sintaks bahasa pemrograman dari nol.',
+      },
+      {
+        type: 'prompt',
+        content: 'Buatkan kerangka landing page sederhana untuk bisnis jasa dengan bagian banner utama, 3 kartu keunggulan, daftar harga paket, dan tombol aksi WhatsApp.',
+      },
+    ],
+  },
+  {
+    id: 'les_1_1_2',
+    moduleId: 'mod_1_1',
+    courseId: 'course_1',
+    title: 'Menyiapkan Struktur Halaman',
+    duration: '20 Menit',
+    order: 2,
+    blocks: [
+      {
+        type: 'text',
+        content: 'Struktur halaman yang rapi memprioritaskan keterbacaan di layar kecil. Pastikan hierarki informasi mengalir dari perkenalan, solusi yang ditawarkan, bukti kepuasan, hingga ajakan aksi yang jelas.',
+      },
+      {
+        type: 'image',
+        source: 'tautan',
+        value: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80',
+        caption: 'Contoh alur tata letak halaman',
+      },
+    ],
+  },
+  {
+    id: 'les_1_1_3',
+    moduleId: 'mod_1_1',
+    courseId: 'course_1',
+    title: 'Prinsip Desain Bersih',
+    duration: '18 Menit',
+    order: 3,
+    blocks: [
+      {
+        type: 'text',
+        content: 'Desain bersih berfokus pada ruang kosong yang lega, kontras warna yang nyaman di mata, dan konsistensi ukuran huruf antarelemen.',
+      },
+    ],
+  },
+
+  // Course 2 - Modul 2 - Lesson with YouTube, 5-step checklist guide, and 2 Claude Skill downloads!
+  {
+    id: 'les_2_2_1',
+    moduleId: 'mod_2_2',
+    courseId: 'course_2',
+    title: 'Pemasangan GPS dan Kamera Presensi',
+    duration: '35 Menit',
+    order: 1,
+    blocks: [
+      {
+        type: 'youtube',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        startSeconds: 15,
+      },
+      {
+        type: 'text',
+        content: 'Pelajaran ini mencakup integrasi modul kamera dan penentuan koordinat presensi. Ikuti 5 langkah terstruktur berikut dan centang setiap kali menyelesaikan tahapannya.',
+      },
+      {
+        type: 'steps',
+        steps: [
+          {
+            id: 'step_1',
+            title: 'Langkah 1: Mengaktifkan Izin Lokasi dan Koordinat Kantor',
+            description: 'Tentukan titik koordinat lintang dan bujur kantor pusat, lalu tetapkan radius toleransi absensi dalam meter.',
+            imageUrl: 'https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=800&q=80',
+          },
+          {
+            id: 'step_2',
+            title: 'Langkah 2: Menyiapkan Komponen Pemotretan Selfie',
+            description: 'Pasang elemen jendela kamera depan dengan rasio bujur sangkar dan resolusi seimbang agar ringan dimuat di HP.',
+          },
+          {
+            id: 'step_3',
+            title: 'Langkah 3: Menghubungkan Validasi Waktu Nyata',
+            description: 'Sistem mencocokkan jam perangkat dengan jam server untuk mencegah manipulasi waktu absen pengguna.',
+          },
+          {
+            id: 'step_4',
+            title: 'Langkah 4: Mengintegrasikan Skill Claude Generator Absensi',
+            description: 'Pasang berkas keahlian khusus Claude untuk memproses logika pencatatan status datang, terlambat, dan pulang.',
+          },
+          {
+            id: 'step_5',
+            title: 'Langkah 5: Pengujian Langsung di Ponsel',
+            description: 'Buka tautan uji coba di peramban HP Anda, lakukan satu kali absen masuk, dan pastikan data tersimpan di tabel.',
+          },
+        ],
+      },
+      {
+        type: 'download',
+        name: 'Skill Claude - Mesin Absensi GPS',
+        category: 'Skill Claude',
+        version: 'v2.4.0',
+        description: 'Paket keahlian AI untuk otomatisasi verifikasi geolokasi dan deteksi radius kantor.',
+        source: 'tautan',
+        value: 'https://github.com/gubersmart/skills/releases/download/v2.4/claude-gps-attendance.zip',
+        fileId: 'file_gps_skill',
+      },
+      {
+        type: 'download',
+        name: 'Skill Claude - Format Rekap Presensi',
+        category: 'Skill Claude',
+        version: 'v1.8.0',
+        description: 'Modul otomatisasi perhitungan jam kerja lembur dan rekapitulasi presensi bulanan.',
+        source: 'tautan',
+        value: 'https://github.com/gubersmart/skills/releases/download/v1.8/claude-attendance-summary.zip',
+        fileId: 'file_rekap_skill',
+      },
+    ],
+  },
+  {
+    id: 'les_2_2_2',
+    moduleId: 'mod_2_2',
+    courseId: 'course_2',
+    title: 'Validasi Foto dan Penyimpanan Aman',
+    duration: '25 Menit',
+    order: 2,
+    blocks: [
+      {
+        type: 'text',
+        content: 'Setiap foto selfie kehadiran dikompres secara instan di peramban pengguna sebelum diarsipkan ke lembar kerja dan folder arsip.',
+      },
+      {
+        type: 'prompt',
+        content: 'Buatkan fungsi kompresi gambar di sisi klien dengan kompresi kualitas 70% dan batas ukuran maksimal 300KB.',
+      },
+    ],
+  },
+
+  // Course 3 - Lesson with copy-ready prompts
+  {
+    id: 'les_3_3_1',
+    moduleId: 'mod_3_3',
+    courseId: 'course_3',
+    title: 'Format Pesan Checkout WhatsApp Otomatis',
+    duration: '22 Menit',
+    order: 1,
+    blocks: [
+      {
+        type: 'text',
+        content: 'Ketika pembeli menekan tombol Selesaikan Pesanan di keranjang belanja, rincian barang, total harga, dan alamat kirim langsung terangkum rapi ke kolom chat WhatsApp toko.',
+      },
+      {
+        type: 'prompt',
+        content: `Halo Admin Toko,\nSaya ingin memesan:\n- [Nama Produk 1] x [Jumlah] = [Subtotal]\n- [Nama Produk 2] x [Jumlah] = [Subtotal]\n\nTotal Tagihan: [Total]\nNama Pemesan: [Nama]\nNomor WhatsApp: [Nomor]\nAlamat Pengiriman: [Alamat Lengkap]\n\nMohon petunjuk metode pembayaran. Terima kasih!`,
+      },
+      {
+        type: 'link',
+        label: 'Uji Format Pesan di Generator Tautan WhatsApp',
+        url: 'https://wa.me/6281234567890',
+      },
+    ],
+  },
+];
+
+export const INITIAL_DOWNLOADS: FileDownload[] = [
+  {
+    id: 'file_1',
+    name: 'Skill Claude - Mesin Absensi GPS',
+    category: 'Skill Claude',
+    version: 'v2.4.0',
+    description: 'Paket keahlian AI untuk otomatisasi verifikasi geolokasi dan deteksi radius kantor.',
+    source: 'tautan',
+    value: 'https://github.com/gubersmart/skills/releases/download/v2.4/claude-gps-attendance.zip',
+    courseId: 'course_2',
+    downloadCount: 142,
+    updatedAt: '2026-09-15',
+  },
+  {
+    id: 'file_2',
+    name: 'Skill Claude - Format Rekap Presensi',
+    category: 'Skill Claude',
+    version: 'v1.8.0',
+    description: 'Modul otomatisasi perhitungan jam kerja lembur dan rekapitulasi presensi bulanan.',
+    source: 'tautan',
+    value: 'https://github.com/gubersmart/skills/releases/download/v1.8/claude-attendance-summary.zip',
+    courseId: 'course_2',
+    downloadCount: 98,
+    updatedAt: '2026-09-20',
+  },
+  {
+    id: 'file_3',
+    name: 'Skill Claude - Mesin Katalog WhatsApp',
+    category: 'Skill Claude',
+    version: 'v3.1.2',
+    description: 'Instruksi sistem Claude untuk memproduksi komponen katalog interaktif dan checkout chat.',
+    source: 'tautan',
+    value: 'https://github.com/gubersmart/skills/releases/download/v3.1/claude-wa-catalog.zip',
+    courseId: 'course_3',
+    downloadCount: 215,
+    updatedAt: '2026-09-28',
+  },
+  {
+    id: 'file_4',
+    name: 'Skill Claude - Landing Page Generator',
+    category: 'Skill Claude',
+    version: 'v2.0.1',
+    description: 'Pustaka instruksi Claude untuk merancang halaman promosi konversi tinggi dalam hitungan detik.',
+    source: 'tautan',
+    value: 'https://github.com/gubersmart/skills/releases/download/v2.0/claude-landing-page.zip',
+    courseId: 'course_1',
+    downloadCount: 310,
+    updatedAt: '2026-10-01',
+  },
+  {
+    id: 'file_5',
+    name: 'Template Desain Responsif HP',
+    category: 'Template',
+    version: 'v1.0.0',
+    description: 'Struktur kartu dan menu drawer siap pakai untuk tampilan ponsel.',
+    source: 'tautan',
+    value: 'https://github.com/gubersmart/templates/releases/download/v1.0/mobile-template.zip',
+    courseId: 'course_1',
+    downloadCount: 184,
+    updatedAt: '2026-08-30',
+  },
+];
+
+export const INITIAL_QUIZZES: Quiz[] = [
+  {
+    id: 'quiz_course_1',
+    moduleId: 'mod_1_4',
+    courseId: 'course_1',
+    passingScore: 80,
+    questions: [
+      {
+        id: 'q1_1',
+        question: 'Apa prioritas utama saat merancang halaman web modern untuk pemula?',
+        options: ['Tata letak responsif di layar ponsel', 'Penggunaan animasi bergerak yang banyak', 'Koding dari nol tanpa bantuan AI', 'Warna latar yang sangat kontras'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q1_2',
+        question: 'Di mana sebaiknya tombol aksi utama (Call to Action) diletakkan?',
+        options: ['Di bagian yang langsung terlihat dan menonjol', 'Tersembunyi di dalam menu paling bawah', 'Hanya di halaman kontak saja', 'Di catatan kaki tanpa warna'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q1_3',
+        question: 'Berapa ukuran area sentuh minimal untuk tombol di layar sentuh HP?',
+        options: ['44 x 44 piksel', '10 x 10 piksel', '20 x 20 piksel', '80 x 80 piksel'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q1_4',
+        question: 'Apa fungsi utama formulir kontak terintegrasi?',
+        options: ['Menampung pesan calon pembeli langsung', 'Membuat halaman menjadi lebih berat', 'Menggantikan peran server utama', 'Menghapus data secara otomatis'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q1_5',
+        question: 'Bagaimana cara terbaik memastikan website dapat dibuka dengan cepat?',
+        options: ['Mengoptimalkan ukuran dan resolusi gambar', 'Menambah banyak berkas musik latar', 'Menggunakan huruf yang tidak standar', 'Membuat formulir yang sangat panjang'],
+        correctIndex: 0,
+      },
+    ],
+  },
+  {
+    id: 'quiz_course_2',
+    moduleId: 'mod_2_3',
+    courseId: 'course_2',
+    passingScore: 80,
+    questions: [
+      {
+        id: 'q2_1',
+        question: 'Mengapa radius presensi berbasis GPS perlu dibatasi?',
+        options: ['Memastikan pengguna benar-benar berada di lokasi kerja', 'Mempercepat sinyal seluler', 'Menghemat baterai ponsel', 'Menghindari pencatatan tanggal'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q2_2',
+        question: 'Fungsi utama kompresi gambar foto presensi di peramban adalah:',
+        options: ['Menghemat kuota data dan mempercepat proses simpan', 'Mengubah foto menjadi hitam putih', 'Menambah resolusi foto', 'Menghilangkan nama berkas'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q2_3',
+        question: 'Apa yang digunakan untuk mencegah kecurangan manipulasi jam pada ponsel pengguna?',
+        options: ['Menggunakan waktu acuan dari jam server', 'Mematikan fitur tanggal di ponsel', 'Meminta pengguna menulis jam manual', 'Mengulang proses pemotretan'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q2_4',
+        question: 'Bagaimana data absensi harian dapat direkap secara praktis?',
+        options: ['Disimpan otomatis dalam format tabel dan diekspor ke PDF', 'Dicatat ulang di buku tulis', 'Dicetak setiap kali satu orang absen', 'Dikirim lewat surat elektronik satu per satu'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q2_5',
+        question: 'Kapan notifikasi kehadiran sebaiknya muncul pada layar pengguna?',
+        options: ['Seketika setelah tombol kirim berhasil diproses', 'Satu jam setelah proses pengiriman', 'Hanya bila terjadi kegagalan', 'Sebelum foto selfie diambil'],
+        correctIndex: 0,
+      },
+    ],
+  },
+  {
+    id: 'quiz_course_3',
+    moduleId: 'mod_3_4',
+    courseId: 'course_3',
+    passingScore: 80,
+    questions: [
+      {
+        id: 'q3_1',
+        question: 'Apa keuntungan tombol checkout yang langsung terhubung ke chat WhatsApp?',
+        options: ['Komunikasi langsung dan transaksi cepat dengan pembeli', 'Tidak perlu menginput nama barang', 'Menghapus ongkos kirim otomatis', 'Mengabaikan stok barang'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q3_2',
+        question: 'Informasi apa yang paling penting ada dalam ringkasan keranjang belanja?',
+        options: ['Nama produk, jumlah, subtotal, dan total tagihan', 'Riwayat belanja 5 tahun lalu', 'Daftar nama karyawan toko', 'Ukuran layar peramban'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q3_3',
+        question: 'Bagaimana cara menampilkan katalog produk agar mudah dicari calon pembeli?',
+        options: ['Menyediakan filter kategori dan kolom pencarian', 'Menumpuk semua gambar tanpa nama', 'Menyembunyikan harga produk', 'Menampilkan satu produk per halaman'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q3_4',
+        question: 'Berapa rasio foto produk yang disarankan untuk katalog ponsel?',
+        options: ['1:1 bujur sangkar atau 4:3 proporsional', '20:1 memanjang', '1:5 sangat tinggi', 'Bebas tanpa batas'],
+        correctIndex: 0,
+      },
+      {
+        id: 'q3_5',
+        question: 'Bagaimana cara menangani pembeli yang membatalkan pesanan di keranjang?',
+        options: ['Sediakan tombol hapus item yang mudah dijangkau', 'Kunci halaman keranjang', 'Hapus semua data peramban', 'Tutup aplikasi'],
+        correctIndex: 0,
+      },
+    ],
+  },
+];
+
+export const INITIAL_MEMBERS: Member[] = [
+  {
+    id: 'mem_1',
+    name: 'Budi Santoso',
+    whatsapp: '6281298765432',
+    ownedCourses: ['course_1', 'course_2'],
+    accessCodeHash: 'member123_hash',
+    plainAccessCode: 'member123',
+    status: 'aktif',
+    createdAt: '2026-08-10',
+  },
+  {
+    id: 'mem_2',
+    name: 'Siti Rahmawati',
+    whatsapp: '6281311223344',
+    ownedCourses: ['course_1'],
+    accessCodeHash: 'member456_hash',
+    plainAccessCode: 'member456',
+    status: 'aktif',
+    createdAt: '2026-08-22',
+  },
+  {
+    id: 'mem_3',
+    name: 'Ahmad Fauzi',
+    whatsapp: '6285788990011',
+    ownedCourses: ['course_1', 'course_2', 'course_3'],
+    accessCodeHash: 'member789_hash',
+    plainAccessCode: 'member789',
+    status: 'aktif',
+    createdAt: '2026-09-05',
+  },
+];
+
+export const INITIAL_PROGRESS: Record<string, UserProgress> = {
+  mem_1: {
+    memberId: 'mem_1',
+    completedLessons: ['les_1_1_1', 'les_1_1_2', 'les_2_2_1'],
+    completedSteps: {
+      les_2_2_1: ['step_1', 'step_2', 'step_3'],
+    },
+    notes: {
+      les_1_1_1: 'Perlu siapkan teks copywriting penawaran untuk toko kelontong.',
+      les_2_2_1: 'Radius kantor ideal diset ke 50 meter.',
+    },
+    quizResults: {
+      mod_1_4: { score: 100, passed: true, date: '2026-09-01', attempts: 1 },
+    },
+    certificates: {
+      course_1: { certNumber: 'GS-2026-1082', issuedAt: '2026-09-01' },
+    },
+  },
+  mem_2: {
+    memberId: 'mem_2',
+    completedLessons: ['les_1_1_1'],
+    completedSteps: {},
+    notes: {},
+    quizResults: {},
+    certificates: {},
+  },
+  mem_3: {
+    memberId: 'mem_3',
+    completedLessons: ['les_1_1_1', 'les_1_1_2', 'les_1_1_3', 'les_2_2_1', 'les_2_2_2', 'les_3_3_1'],
+    completedSteps: {
+      les_2_2_1: ['step_1', 'step_2', 'step_3', 'step_4', 'step_5'],
+    },
+    notes: {
+      les_3_3_1: 'Format pesan WA sudah dites dan berhasil masuk ke admin.',
+    },
+    quizResults: {
+      mod_1_4: { score: 100, passed: true, date: '2026-09-12', attempts: 1 },
+      mod_2_3: { score: 100, passed: true, date: '2026-09-18', attempts: 1 },
+      mod_3_4: { score: 100, passed: true, date: '2026-09-29', attempts: 1 },
+    },
+    certificates: {
+      course_1: { certNumber: 'GS-2026-1190', issuedAt: '2026-09-12' },
+      course_2: { certNumber: 'GS-2026-1245', issuedAt: '2026-09-18' },
+      course_3: { certNumber: 'GS-2026-1302', issuedAt: '2026-09-29' },
+    },
+  },
+};
+
+export const INITIAL_APP_EXAMPLES: AppExample[] = [
+  {
+    id: 'app_1',
+    name: 'Portal Sekolah Cendekia',
+    category: 'Pendidikan',
+    description: 'Sistem informasi sekolah lengkap dengan agenda kegiatan, data guru, pengumuman, dan pendaftaran murid baru.',
+    imageUrl: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=800&q=80',
+    appUrl: 'https://contoh-sekolah.gubersmart.com',
+    order: 1,
+    isVisible: true,
+  },
+  {
+    id: 'app_2',
+    name: 'Katalog Butik Hijab Aura',
+    category: 'E-Commerce',
+    description: 'Katalog busana muslim interaktif dengan galeri warna, pemilihan ukuran, dan checkout langsung ke obrolan WhatsApp.',
+    imageUrl: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800&q=80',
+    appUrl: 'https://contoh-butik.gubersmart.com',
+    order: 2,
+    isVisible: true,
+  },
+  {
+    id: 'app_3',
+    name: 'Sistem Absensi Karyawan Mitra',
+    category: 'Produktivitas',
+    description: 'Aplikasi pencatatan absensi harian berbasis foto selfie dan verifikasi radius geolokasi kantor.',
+    imageUrl: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&w=800&q=80',
+    appUrl: 'https://contoh-absensi.gubersmart.com',
+    order: 3,
+    isVisible: true,
+  },
+  {
+    id: 'app_4',
+    name: 'Kasir Pintar Kedai Kopi',
+    category: 'Kasir (POS)',
+    description: 'Aplikasi pencatatan pesanan minuman dan makanan, cetak struk digital, dan ringkasan pendapatan harian.',
+    imageUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
+    appUrl: 'https://contoh-kasir.gubersmart.com',
+    order: 4,
+    isVisible: true,
+  },
+  {
+    id: 'app_5',
+    name: 'Undangan Pernikahan Digital',
+    category: 'Gaya Hidup',
+    description: 'Halaman undangan pernikahan estetik dengan hitung mundur hari H, navigasi peta lokasi, dan konfirmasi kehadiran.',
+    imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+    appUrl: 'https://contoh-undangan.gubersmart.com',
+    order: 5,
+    isVisible: true,
+  },
+  {
+    id: 'app_6',
+    name: 'Dasbor Laporan Kantor',
+    category: 'Manajemen',
+    description: 'Dasbor visualisasi target bulanan, status tugas tim, dan unduhan berkas laporan kerja otomatis.',
+    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
+    appUrl: 'https://contoh-dasbor.gubersmart.com',
+    order: 6,
+    isVisible: true,
+  },
+];
+
+export const INITIAL_TESTIMONIALS: Testimonial[] = [
+  {
+    id: 'testi_1',
+    name: 'Hendri Pratama',
+    role: 'Pemilik Kedai Kopi',
+    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+    rating: 5,
+    content: 'Saya tidak punya latar belakang koding sama sekali. Mengikuti panduan di Guber Smart, dalam waktu satu hari saya berhasil membuat katalog menu yang langsung terhubung ke kasir dan pesanan WhatsApp.',
+    order: 1,
+    isVisible: true,
+  },
+  {
+    id: 'testi_2',
+    name: 'Dewi Anggraini',
+    role: 'Admin Kepegawaian',
+    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+    rating: 5,
+    content: 'Sistem absensi mandiri yang diajarkan sangat membantu efisiensi kantor kami. Karyawan tinggal selfie di lokasi dan data langsung tersimpan rapi.',
+    order: 2,
+    isVisible: true,
+  },
+  {
+    id: 'testi_3',
+    name: 'Rizky Kurniawan',
+    role: 'Freelancer',
+    avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&q=80',
+    rating: 5,
+    content: 'Skill Claude yang disediakan benar-benar siap pakai. Tinggal ikuti panduan bertahap dan hasilnya langsung terlihat.',
+    order: 3,
+    isVisible: true,
+  },
+  {
+    id: 'testi_4',
+    name: 'Maria Ulfah',
+    role: 'Guru Sekolah',
+    avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80',
+    rating: 5,
+    content: 'Website informasi sekolah kami kini selesai dan aktif. Murid dan orang tua sangat senang karena tampilannya rapi saat dibuka di HP.',
+    order: 4,
+    isVisible: true,
+  },
+  {
+    id: 'testi_5',
+    name: 'Bambang Sudirjo',
+    role: 'Pengusaha Retail',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
+    rating: 5,
+    content: 'Materi padat, langsung praktik, dan tanpa istilah rumit yang membingungkan. Sangat direkomendasikan untuk pemula.',
+    order: 5,
+    isVisible: true,
+  },
+];
+
+export const INITIAL_FAQS: FaqItem[] = [
+  {
+    id: 'faq_1',
+    question: 'Apakah pemula tanpa dasar koding bisa mengikuti?',
+    answer: 'Ya. Seluruh materi dirancang khusus untuk pemula. Anda akan dipandu menggunakan instruksi bahasa sehari-hari dan alat visual modern.',
+    order: 1,
+    isVisible: true,
+  },
+  {
+    id: 'faq_2',
+    question: 'Bagaimana cara mengakses materi setelah membeli di Lynk.id?',
+    answer: 'Setelah pembelian terkonfirmasi di Lynk.id, admin akan membuatkan kode akses pribadi untuk akun Anda. Masukkan kode tersebut lewat tombol Masuk di menu navigasi.',
+    order: 2,
+    isVisible: true,
+  },
+  {
+    id: 'faq_3',
+    question: 'Apakah akses kelas berlaku selamanya?',
+    answer: 'Ya. Akses materi dan pembaruan berkas di dalam portal dapat dipelajari kapan saja tanpa batasan waktu.',
+    order: 3,
+    isVisible: true,
+  },
+  {
+    id: 'faq_4',
+    question: 'Bisakah materi dipelajari lewat layar HP?',
+    answer: 'Tentu. Seluruh portal belajar dan aplikasi yang dibuat sudah dioptimalkan untuk layar ponsel dengan navigasi sentuh yang nyaman.',
+    order: 4,
+    isVisible: true,
+  },
+  {
+    id: 'faq_5',
+    question: 'Apakah member mendapatkan sertifikat penyelesaian?',
+    answer: 'Ya. Setiap member yang menyelesaikan seluruh modul pelajaran dan lulus kuis evaluasi akan menerima sertifikat digital dengan nomor unik.',
+    order: 5,
+    isVisible: true,
+  },
+  {
+    id: 'faq_6',
+    question: 'Apakah file Skill Claude bisa langsung dipakai?',
+    answer: 'Ya. Berkas keahlian siap diunduh di ruang member dan langsung dapat digunakan bersama panduan langkah demi langkah.',
+    order: 6,
+    isVisible: true,
+  },
+];
+
+export const INITIAL_ANNOUNCEMENTS: Announcement[] = [
+  {
+    id: 'ann_1',
+    title: 'Pembaruan Berkas Skill Claude Versi 3.1',
+    content: 'Tersedia pembaruan berkas otomasi katalog WhatsApp untuk seluruh pemegang kelas Toko Online di Pustaka Skill.',
+    date: '2026-10-01',
+    order: 1,
+    isVisible: true,
+  },
+  {
+    id: 'ann_2',
+    title: 'Penambahan Modul Validasi Kamera Selfie',
+    content: 'Pelajaran baru tentang optimasi pengambilan foto selfie kehadiran di layar HP kini sudah dapat dipelajari.',
+    date: '2026-09-24',
+    order: 2,
+    isVisible: true,
+  },
+  {
+    id: 'ann_3',
+    title: 'Penerbitan Sertifikat Digital Otomatis',
+    content: 'Fitur cetak dan unduh dokumen sertifikat resmi kelulusan kelas kini telah aktif di dasbor masing-masing member.',
+    date: '2026-09-10',
+    order: 3,
+    isVisible: true,
+  },
+];
+
+export const INITIAL_CONTACT_MESSAGES: ContactMessage[] = [
+  {
+    id: 'msg_1',
+    name: 'Rudi Hartono',
+    whatsapp: '6281233445566',
+    message: 'Apakah ada pendampingan privat untuk pembuatan sistem inventory toko sembako?',
+    createdAt: '2026-10-02T10:15:00Z',
+    isRead: false,
+  },
+  {
+    id: 'msg_2',
+    name: 'Maya Sartika',
+    whatsapp: '6287899887766',
+    message: 'Saya sudah membeli paket di Lynk.id, mohon konfirmasi aktivasi kode akses.',
+    createdAt: '2026-10-03T08:30:00Z',
+    isRead: true,
+  },
+];
+
+export const INITIAL_LOGS: ActivityLog[] = [
+  {
+    id: 'log_1',
+    role: 'Superadmin',
+    action: 'Pembaruan pengaturan identitas dan tema CMS',
+    timestamp: '2026-10-01T14:20:00Z',
+  },
+  {
+    id: 'log_2',
+    role: 'Admin',
+    action: 'Penambahan anggota baru Budi Santoso',
+    timestamp: '2026-10-02T09:12:00Z',
+  },
+  {
+    id: 'log_3',
+    role: 'Admin',
+    action: 'Penerbitan berkas Skill Claude v3.1',
+    timestamp: '2026-10-03T11:45:00Z',
+  },
+];
