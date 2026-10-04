@@ -1,0 +1,85 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Deny All
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Connection test document
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // CMS Settings: Text, Navigation, Theme and Link URLs
+    match /cms/settings {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // Courses: Syllabus, modules, lessons text and video URLs
+    match /courses/{courseId} {
+      allow read: if isValidId(courseId);
+      allow write: if isValidId(courseId);
+    }
+
+    // Members: Account records
+    match /members/{memberId} {
+      allow read: if isValidId(memberId);
+      allow write: if isValidId(memberId);
+    }
+
+    // Learner Progress: Completed lesson IDs and quiz scores
+    match /progress/{memberId} {
+      allow read: if isValidId(memberId);
+      allow write: if isValidId(memberId);
+    }
+
+    // Announcements
+    match /announcements/{announcementId} {
+      allow read: if isValidId(announcementId);
+      allow write: if isValidId(announcementId);
+    }
+
+    // Testimonials: Text and avatar URLs
+    match /testimonials/{testimonialId} {
+      allow read: if isValidId(testimonialId);
+      allow write: if isValidId(testimonialId);
+    }
+
+    // Examples: App names, descriptions, and demo URLs
+    match /examples/{exampleId} {
+      allow read: if isValidId(exampleId);
+      allow write: if isValidId(exampleId);
+    }
+
+    // FAQs: Questions and Answers
+    match /faqs/{faqId} {
+      allow read: if isValidId(faqId);
+      allow write: if isValidId(faqId);
+    }
+
+    // Contact Inquiries: Text messages only
+    match /contact_messages/{messageId} {
+      allow read: if isValidId(messageId);
+      allow create: if isValidId(messageId) &&
+        incoming().name is string && incoming().name.size() <= 150 &&
+        incoming().message is string && incoming().message.size() <= 3000;
+      allow update, delete: if isValidId(messageId);
+    }
+  }
+}

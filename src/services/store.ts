@@ -45,6 +45,17 @@ export interface PasswordConfig {
   superadminPass: string;
 }
 
+export interface StoreSyncHandlers {
+  syncCMS?: (cms: CMSSettings) => void;
+  syncCourse?: (course: Course) => void;
+  deleteCourse?: (id: string) => void;
+  syncAnnouncement?: (announcement: Announcement) => void;
+  deleteAnnouncement?: (id: string) => void;
+  syncMember?: (member: Member) => void;
+  syncProgress?: (progress: UserProgress) => void;
+  syncContactMessage?: (msg: ContactMessage) => void;
+}
+
 const STORAGE_KEYS = {
   CMS: 'gs_cms_v1',
   COURSES: 'gs_courses_v1',
@@ -83,9 +94,14 @@ class StoreManager {
   private logs: ActivityLog[];
   private passwords: PasswordConfig;
   private auth: AuthState;
+  private syncHandlers?: StoreSyncHandlers;
 
   private listeners: Set<() => void> = new Set();
   private inactivityTimer: any = null;
+
+  public setSyncHandlers(handlers: StoreSyncHandlers): void {
+    this.syncHandlers = handlers;
+  }
 
   constructor() {
     this.cms = this.load(STORAGE_KEYS.CMS, INITIAL_CMS_SETTINGS);
@@ -312,13 +328,61 @@ class StoreManager {
   public updateCMS(updates: Partial<CMSSettings>): void {
     this.cms = { ...this.cms, ...updates };
     this.save(STORAGE_KEYS.CMS, this.cms);
+    this.syncHandlers?.syncCMS?.(this.cms);
     this.addLog(this.auth.role, 'Memperbarui pengaturan CMS');
     this.notify();
+  }
+
+  public applyRemoteCMS(remoteCms: Partial<CMSSettings>): void {
+    this.cms = { ...this.cms, ...remoteCms };
+    this.save(STORAGE_KEYS.CMS, this.cms);
+    this.notify();
+  }
+
+  public applyRemoteAnnouncements(remoteAnnouncements: Announcement[]): void {
+    if (remoteAnnouncements.length > 0) {
+      this.announcements = remoteAnnouncements;
+      this.save(STORAGE_KEYS.ANNOUNCEMENTS, this.announcements);
+      this.notify();
+    }
+  }
+
+  public applyRemoteCourses(remoteCourses: Course[]): void {
+    if (remoteCourses.length > 0) {
+      this.courses = remoteCourses;
+      this.save(STORAGE_KEYS.COURSES, this.courses);
+      this.notify();
+    }
+  }
+
+  public applyRemoteExamples(remoteExamples: AppExample[]): void {
+    if (remoteExamples.length > 0) {
+      this.appExamples = remoteExamples;
+      this.save(STORAGE_KEYS.APP_EXAMPLES, this.appExamples);
+      this.notify();
+    }
+  }
+
+  public applyRemoteTestimonials(remoteTestis: Testimonial[]): void {
+    if (remoteTestis.length > 0) {
+      this.testimonials = remoteTestis;
+      this.save(STORAGE_KEYS.TESTIMONIALS, this.testimonials);
+      this.notify();
+    }
+  }
+
+  public applyRemoteFaqs(remoteFaqs: FaqItem[]): void {
+    if (remoteFaqs.length > 0) {
+      this.faq = remoteFaqs;
+      this.save(STORAGE_KEYS.FAQ, this.faq);
+      this.notify();
+    }
   }
 
   public resetCMSToDefault(): void {
     this.cms = JSON.parse(JSON.stringify(INITIAL_CMS_SETTINGS));
     this.save(STORAGE_KEYS.CMS, this.cms);
+    this.syncHandlers?.syncCMS?.(this.cms);
     this.addLog(this.auth.role, 'Memulihkan pengaturan CMS ke bawaan');
     this.notify();
   }
@@ -340,6 +404,7 @@ class StoreManager {
       this.courses.push(course);
     }
     this.save(STORAGE_KEYS.COURSES, this.courses);
+    this.syncHandlers?.syncCourse?.(course);
     this.addLog(this.auth.role, `Menyimpan kelas: ${course.name}`);
     this.notify();
   }
@@ -349,6 +414,7 @@ class StoreManager {
     if (idx >= 0) {
       const deleted = this.courses.splice(idx, 1)[0];
       this.save(STORAGE_KEYS.COURSES, this.courses);
+      this.syncHandlers?.deleteCourse?.(id);
       this.addLog(this.auth.role, `Menghapus kelas: ${deleted.name}`);
       this.notify();
       return deleted;
@@ -524,6 +590,7 @@ class StoreManager {
       this.members.push(member);
     }
     this.save(STORAGE_KEYS.MEMBERS, this.members);
+    this.syncHandlers?.syncMember?.(member);
     this.addLog(this.auth.role, `Menyimpan data member: ${member.name}`);
     this.notify();
   }
@@ -585,6 +652,7 @@ class StoreManager {
       isCompleted = true;
     }
     this.save(STORAGE_KEYS.PROGRESS, this.progress);
+    this.syncHandlers?.syncProgress?.(prog);
     this.checkAndAwardCertificate(memberId);
     this.notify();
     return isCompleted;
@@ -606,6 +674,7 @@ class StoreManager {
       done = true;
     }
     this.save(STORAGE_KEYS.PROGRESS, this.progress);
+    this.syncHandlers?.syncProgress?.(prog);
     this.notify();
     return done;
   }
@@ -614,6 +683,7 @@ class StoreManager {
     const prog = this.getProgress(memberId);
     prog.notes[lessonId] = note;
     this.save(STORAGE_KEYS.PROGRESS, this.progress);
+    this.syncHandlers?.syncProgress?.(prog);
     this.notify();
   }
 
@@ -627,6 +697,7 @@ class StoreManager {
       attempts: (existing?.attempts || 0) + 1,
     };
     this.save(STORAGE_KEYS.PROGRESS, this.progress);
+    this.syncHandlers?.syncProgress?.(prog);
     this.checkAndAwardCertificate(memberId);
     this.notify();
   }
@@ -764,6 +835,7 @@ class StoreManager {
       this.announcements.push(item);
     }
     this.save(STORAGE_KEYS.ANNOUNCEMENTS, this.announcements);
+    this.syncHandlers?.syncAnnouncement?.(item);
     this.notify();
   }
 
@@ -772,6 +844,7 @@ class StoreManager {
     if (idx >= 0) {
       const deleted = this.announcements.splice(idx, 1)[0];
       this.save(STORAGE_KEYS.ANNOUNCEMENTS, this.announcements);
+      this.syncHandlers?.deleteAnnouncement?.(id);
       this.notify();
       return deleted;
     }
@@ -792,6 +865,7 @@ class StoreManager {
     };
     this.contacts.unshift(item);
     this.save(STORAGE_KEYS.CONTACTS, this.contacts);
+    this.syncHandlers?.syncContactMessage?.(item);
     this.notify();
   }
 

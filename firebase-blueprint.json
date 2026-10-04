@@ -1,0 +1,183 @@
+{
+  "entities": {
+    "CmsSettings": {
+      "title": "CmsSettings",
+      "description": "Website CMS appearance, texts, and navigation links",
+      "type": "object",
+      "properties": {
+        "identity": { "type": "object", "description": "Text identity, app name, and link URLs" },
+        "theme": { "type": "object", "description": "Theme color hex codes and font settings" },
+        "navigation": { "type": "array", "description": "List of navigation link items" },
+        "buttons": { "type": "array", "description": "Button labels, paths, and styles" },
+        "sections": { "type": "array", "description": "Page sections titles and display flags" },
+        "pages": { "type": "array", "description": "Custom text pages" },
+        "features": { "type": "object", "description": "Feature flag toggles" },
+        "media": { "type": "object", "description": "Media text URLs (YouTube, gallery links)" },
+        "footer": { "type": "object", "description": "Footer contact text and social link URLs" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of last update" }
+      }
+    },
+    "Course": {
+      "title": "Course",
+      "description": "Online class metadata, module syllabus, lesson texts and video link URLs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 255 },
+        "summary": { "type": "string", "maxLength": 500 },
+        "description": { "type": "string", "maxLength": 5000 },
+        "price": { "type": "number" },
+        "lynkUrl": { "type": "string", "maxLength": 1000 },
+        "coverSource": { "type": "string", "maxLength": 30 },
+        "coverValue": { "type": "string", "maxLength": 1000 },
+        "status": { "type": "string", "enum": ["tampil", "sembunyi"] },
+        "order": { "type": "number" },
+        "duration": { "type": "string", "maxLength": 50 },
+        "whatYouWillLearn": { "type": "array" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name", "price", "status"]
+    },
+    "Member": {
+      "title": "Member",
+      "description": "Member registration record, access code, and purchased class IDs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 150 },
+        "whatsapp": { "type": "string", "maxLength": 30 },
+        "ownedCourses": { "type": "array" },
+        "accessCodeHash": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["aktif", "nonaktif"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "whatsapp", "status"]
+    },
+    "UserProgress": {
+      "title": "UserProgress",
+      "description": "Learner progress, completed lesson IDs, and quiz scores",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string", "maxLength": 128 },
+        "completedLessons": { "type": "array" },
+        "completedSteps": { "type": "object" },
+        "notes": { "type": "object" },
+        "quizResults": { "type": "object" },
+        "certificates": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["memberId"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "Text announcement for students",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 200 },
+        "content": { "type": "string", "maxLength": 4000 },
+        "date": { "type": "string", "maxLength": 50 },
+        "order": { "type": "number" },
+        "isVisible": { "type": "boolean" }
+      },
+      "required": ["id", "title", "content"]
+    },
+    "Testimonial": {
+      "title": "Testimonial",
+      "description": "Student testimonial text and avatar link URL",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "role": { "type": "string", "maxLength": 100 },
+        "avatarUrl": { "type": "string", "maxLength": 1000 },
+        "rating": { "type": "number" },
+        "content": { "type": "string", "maxLength": 2000 },
+        "order": { "type": "number" },
+        "isVisible": { "type": "boolean" }
+      },
+      "required": ["id", "name", "content"]
+    },
+    "AppExample": {
+      "title": "AppExample",
+      "description": "Showcase app title, description, and link URL",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 150 },
+        "category": { "type": "string", "maxLength": 80 },
+        "description": { "type": "string", "maxLength": 1000 },
+        "imageUrl": { "type": "string", "maxLength": 1000 },
+        "appUrl": { "type": "string", "maxLength": 1000 },
+        "order": { "type": "number" },
+        "isVisible": { "type": "boolean" }
+      },
+      "required": ["id", "name", "appUrl"]
+    },
+    "FaqItem": {
+      "title": "FaqItem",
+      "description": "Frequently asked question and answer text",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "question": { "type": "string", "maxLength": 300 },
+        "answer": { "type": "string", "maxLength": 3000 },
+        "order": { "type": "number" },
+        "isVisible": { "type": "boolean" }
+      },
+      "required": ["id", "question", "answer"]
+    },
+    "ContactMessage": {
+      "title": "ContactMessage",
+      "description": "Contact form inquiry text message",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 100 },
+        "whatsapp": { "type": "string", "maxLength": 30 },
+        "message": { "type": "string", "maxLength": 2000 },
+        "createdAt": { "type": "string", "maxLength": 60 },
+        "isRead": { "type": "boolean" }
+      },
+      "required": ["id", "name", "message"]
+    }
+  },
+  "firestore": {
+    "/cms/settings": {
+      "schema": "CmsSettings",
+      "description": "Global CMS settings document"
+    },
+    "/courses/{courseId}": {
+      "schema": "Course",
+      "description": "Courses collection"
+    },
+    "/members/{memberId}": {
+      "schema": "Member",
+      "description": "Members collection"
+    },
+    "/progress/{memberId}": {
+      "schema": "UserProgress",
+      "description": "Student progress collection"
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Announcements collection"
+    },
+    "/testimonials/{testimonialId}": {
+      "schema": "Testimonial",
+      "description": "Testimonials collection"
+    },
+    "/examples/{exampleId}": {
+      "schema": "AppExample",
+      "description": "App examples collection"
+    },
+    "/faqs/{faqId}": {
+      "schema": "FaqItem",
+      "description": "FAQ collection"
+    },
+    "/contact_messages/{messageId}": {
+      "schema": "ContactMessage",
+      "description": "Contact inquiries collection"
+    }
+  }
+}
