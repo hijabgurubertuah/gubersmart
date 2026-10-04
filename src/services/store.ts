@@ -126,10 +126,7 @@ class StoreManager {
   constructor() {
     this.cms = this.load(STORAGE_KEYS.CMS, INITIAL_CMS_SETTINGS);
     if (!this.cms.sync) {
-      this.cms.sync = { webAppUrl: '', driveFolderId: '1IHIoPGIlz551QNS9Ww2MK594LwBT7lEj', token: '' };
-    } else if (!this.cms.sync.driveFolderId || this.cms.sync.driveFolderId === 'YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE') {
-      this.cms.sync.driveFolderId = '1IHIoPGIlz551QNS9Ww2MK594LwBT7lEj';
-      this.save(STORAGE_KEYS.CMS, this.cms);
+      this.cms.sync = { webAppUrl: '', driveFolderId: '', token: '' };
     }
     this.courses = this.load(STORAGE_KEYS.COURSES, INITIAL_COURSES);
     this.modules = this.load(STORAGE_KEYS.MODULES, INITIAL_MODULES);
@@ -357,6 +354,19 @@ class StoreManager {
     this.save(STORAGE_KEYS.CMS, this.cms);
     this.syncHandlers?.syncCMS?.(this.cms);
     this.addLog(this.auth.role, 'Memperbarui pengaturan CMS');
+    this.notify();
+  }
+
+  public updateSyncConfig(sync: Partial<CMSSettings['sync']>): void {
+    this.cms = {
+      ...this.cms,
+      sync: {
+        ...this.cms.sync,
+        ...sync,
+      },
+    };
+    this.save(STORAGE_KEYS.CMS, this.cms);
+    this.syncHandlers?.syncCMS?.(this.cms);
     this.notify();
   }
 

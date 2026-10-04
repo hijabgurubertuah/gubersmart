@@ -2,11 +2,45 @@
 
 export const APPS_SCRIPT_CODE = `/**
  * Guber Smart - Google Apps Script Bridge
- * Menangani semua unggahan berkas & gambar ke Google Drive secara otomatis.
- * Tanpa token / password - langsung pakai cukup dengan URL Web App.
+ * Menangani pembuatan folder otomatis dan unggahan berkas & gambar ke Google Drive.
+ * Tanpa token / password, tanpa perlu set ID folder manual!
  */
 
-const DRIVE_FOLDER_ID = "1IHIoPGIlz551QNS9Ww2MK594LwBT7lEj";
+const DEFAULT_FOLDER_NAME = "Guber Smart Uploads";
+
+/**
+ * Mencari folder yang ada atau membuat folder baru secara otomatis jika belum ada.
+ */
+function getOrCreateTargetFolder(preferredFolderId) {
+  // 1. Jika ada ID folder yang dikirim dari aplikasi, coba gunakan
+  if (preferredFolderId && preferredFolderId.toString().trim() !== "") {
+    try {
+      const existing = DriveApp.getFolderById(preferredFolderId.toString().trim());
+      if (existing) {
+        return existing;
+      }
+    } catch (e) {
+      // Lewati jika ID tidak valid / tidak ditemukan
+    }
+  }
+
+  // 2. Cari folder berdasarkan nama DEFAULT_FOLDER_NAME
+  const folders = DriveApp.getFoldersByName(DEFAULT_FOLDER_NAME);
+  if (folders.hasNext()) {
+    const f = folders.next();
+    try {
+      f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (e) {}
+    return f;
+  }
+
+  // 3. Buat folder baru otomatis jika belum ada
+  const newFolder = DriveApp.createFolder(DEFAULT_FOLDER_NAME);
+  try {
+    newFolder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (e) {}
+  return newFolder;
+}
 
 function doPost(e) {
   try {
@@ -17,30 +51,21 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
 
-    // 1. Uji Koneksi (Ping)
+    // 1. Uji Koneksi (Ping) & Buat/Ambil Folder Otomatis
     if (action === "ping") {
+      const folder = getOrCreateTargetFolder(data.driveFolderId);
       return responseJSON({
         status: "success",
-        message: "Koneksi ke Google Drive berhasil terhubung!"
+        message: "Koneksi ke Google Drive berhasil terhubung!",
+        folderId: folder.getId(),
+        folderName: folder.getName(),
+        folderUrl: folder.getUrl()
       });
     }
 
     // 2. Unggah Berkas / Gambar ke Google Drive
     if (action === "upload") {
-      const folderId = (data.driveFolderId && data.driveFolderId !== "YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE")
-        ? data.driveFolderId
-        : ((DRIVE_FOLDER_ID && DRIVE_FOLDER_ID !== "YOUR_GOOGLE_DRIVE_FOLDER_ID_HERE") ? DRIVE_FOLDER_ID : null);
-
-      let folder;
-      if (folderId) {
-        try {
-          folder = DriveApp.getFolderById(folderId);
-        } catch (err) {
-          folder = DriveApp.getRootFolder();
-        }
-      } else {
-        folder = DriveApp.getRootFolder();
-      }
+      const folder = getOrCreateTargetFolder(data.driveFolderId);
 
       // Bersihkan base64 data jika masih ada prefix data:image/...;base64,
       let cleanBase64 = data.base64 || "";
@@ -56,7 +81,9 @@ function doPost(e) {
       const file = folder.createFile(blob);
 
       // Set perizinan publik: siapapun yang punya link bisa melihat
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      try {
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      } catch (e) {}
 
       const fileId = file.getId();
       // Direct high-res link yang bisa langsung ditampilkan pada tag <img> di web
@@ -72,7 +99,10 @@ function doPost(e) {
         directUrl: directUrl,
         lh3Url: lh3Url,
         downloadUrl: downloadUrl,
-        viewUrl: viewUrl
+        viewUrl: viewUrl,
+        folderId: folder.getId(),
+        folderName: folder.getName(),
+        folderUrl: folder.getUrl()
       });
     }
 
@@ -117,10 +147,14 @@ function responseJSON(obj) {
 }
 
 function doGet(e) {
+  const folder = getOrCreateTargetFolder();
   return responseJSON({
     status: "success",
     service: "Guber Smart Google Apps Script Bridge",
-    active: true
+    active: true,
+    folderId: folder.getId(),
+    folderName: folder.getName(),
+    folderUrl: folder.getUrl()
   });
 }
 
@@ -129,9 +163,9 @@ function doGet(e) {
  * untuk memberikan izin otorisasi Google Drive (DriveApp) ke akun Anda!
  */
 function initPermissions() {
-  const root = DriveApp.getRootFolder();
-  Logger.log("Akses DriveApp berhasil diotorisasi untuk: " + root.getName());
-  return "Izin Google Drive berhasil diberikan!";
+  const folder = getOrCreateTargetFolder();
+  Logger.log("Akses DriveApp berhasil diotorisasi. Target folder: " + folder.getName() + " (ID: " + folder.getId() + ")");
+  return "Izin Google Drive berhasil diberikan! Target folder ID: " + folder.getId();
 }
 `;
 
@@ -149,6 +183,9 @@ export interface UploadDriveResult {
   downloadUrl?: string;
   viewUrl?: string;
   fileId?: string;
+  folderId?: string;
+  folderName?: string;
+  folderUrl?: string;
   message?: string;
 }
 
@@ -195,6 +232,9 @@ export async function uploadFileToDrive(options: UploadDriveOptions): Promise<Up
       downloadUrl: resJson.downloadUrl,
       viewUrl: resJson.viewUrl,
       fileId: resJson.fileId,
+      folderId: resJson.folderId,
+      folderName: resJson.folderName,
+      folderUrl: resJson.folderUrl,
     };
   } else {
     throw new Error(resJson.message || 'Gagal mengunggah ke Google Drive');

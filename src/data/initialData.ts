@@ -113,7 +113,7 @@ export const INITIAL_CMS_SETTINGS: CMSSettings = {
   sync: {
     webAppUrl: '',
     token: '',
-    driveFolderId: '1IHIoPGIlz551QNS9Ww2MK594LwBT7lEj',
+    driveFolderId: '',
   },
 };
 

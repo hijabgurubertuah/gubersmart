@@ -87,6 +87,15 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             compressedDataUrl: compressed.dataUrl,
           });
 
+          if (driveRes.folderId) {
+            const currentSync = store.getCMS().sync;
+            if (!currentSync.driveFolderId || currentSync.driveFolderId !== driveRes.folderId) {
+              store.updateSyncConfig({
+                driveFolderId: driveRes.folderId,
+              });
+            }
+          }
+
           if (driveRes.directUrl) {
             // Save direct Google Drive text link so Firebase stores lightweight URL
             onChange('drive', driveRes.directUrl);

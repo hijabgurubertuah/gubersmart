@@ -75,6 +75,15 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
           file: file,
         });
 
+        if (driveRes.folderId) {
+          const currentSync = store.getCMS().sync;
+          if (!currentSync.driveFolderId || currentSync.driveFolderId !== driveRes.folderId) {
+            store.updateSyncConfig({
+              driveFolderId: driveRes.folderId,
+            });
+          }
+        }
+
         const targetUrl = driveRes.downloadUrl || driveRes.directUrl || driveRes.viewUrl;
         if (targetUrl) {
           onChange('drive', targetUrl, file.name);
