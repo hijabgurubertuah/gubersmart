@@ -74,19 +74,38 @@ export type ContentBlock =
   | ImageBlock;
 
 // Courses, Modules, Lessons
+export interface CourseAuthor {
+  uid?: string;
+  name: string;
+  avatar?: string;
+  role?: string;
+}
+
 export interface Course {
   id: string;
   name: string;
+  title?: string;
+  slug?: string;
   headline?: string;
   summary: string;
   description: string;
   price: number;
+  originalPrice?: number;
   lynkUrl: string;
   coverSource: FileSource;
   coverValue: string;
-  status: 'tampil' | 'sembunyi';
+  category?: string;
+  tags?: string[];
+  author?: CourseAuthor;
+  status: 'tampil' | 'sembunyi' | 'draft' | 'pending' | 'arsip';
   order: number;
   duration: string;
+  isFeatured?: boolean;
+  isPinned?: boolean;
+  viewsCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  publishedAt?: string;
   modulesCount?: number;
   lessonsCount?: number;
   whatYouWillLearn: string[];

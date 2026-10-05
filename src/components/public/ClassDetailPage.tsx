@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Course, CourseModule, Lesson } from '../../types';
 import { formatRupiah } from '../../utils/crypto';
+import { sanitizeHtml } from '../../utils/sanitize';
 import {
   ArrowLeft,
   BookOpen,
@@ -111,14 +112,21 @@ export const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
       {/* Description & What you learn & Target Audience */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-6 border-t border-slate-200 dark:border-slate-800">
         <div className="md:col-span-2 space-y-8">
-          {/* Detailed description */}
+          {/* Detailed description (Supports Rich Text HTML & plain text) */}
           <div className="space-y-3">
             <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
               Tentang Kelas
             </h2>
-            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
-              {course.description}
-            </p>
+            {course.description.includes('<') && course.description.includes('>') ? (
+              <div
+                className="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 text-sm sm:text-base leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(course.description) }}
+              />
+            ) : (
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                {course.description}
+              </p>
+            )}
           </div>
 
           {/* Yang kamu dapatkan */}
