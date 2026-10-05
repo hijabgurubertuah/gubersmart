@@ -141,7 +141,23 @@ class StoreManager {
       }
       secFeatured.description = '';
     }
+    if (this.cms.identity.heroTitle === 'Bikin Aplikasi Web Sendiri, Tanpa Koding') {
+      this.cms.identity.heroTitle = INITIAL_CMS_SETTINGS.identity.heroTitle;
+      this.cms.identity.heroSubtitle = INITIAL_CMS_SETTINGS.identity.heroSubtitle;
+    }
     this.courses = this.load(STORAGE_KEYS.COURSES, INITIAL_COURSES);
+    const course1 = this.courses.find((c) => c.id === 'course_1');
+    if (course1 && (course1.name === 'Bikin Website Tanpa Koding' || course1.price === 149000)) {
+      course1.name = INITIAL_COURSES[0].name;
+      course1.headline = INITIAL_COURSES[0].headline;
+      course1.summary = INITIAL_COURSES[0].summary;
+      course1.description = INITIAL_COURSES[0].description;
+      course1.price = INITIAL_COURSES[0].price;
+      course1.promoNotice = INITIAL_COURSES[0].promoNotice;
+      course1.whatYouWillLearn = INITIAL_COURSES[0].whatYouWillLearn;
+      course1.targetAudience = INITIAL_COURSES[0].targetAudience;
+      this.save(STORAGE_KEYS.COURSES, this.courses);
+    }
     this.modules = this.load(STORAGE_KEYS.MODULES, INITIAL_MODULES);
     this.lessons = this.load(STORAGE_KEYS.LESSONS, INITIAL_LESSONS);
     this.downloads = this.load(STORAGE_KEYS.DOWNLOADS, INITIAL_DOWNLOADS);

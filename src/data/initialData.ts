@@ -19,8 +19,8 @@ export const INITIAL_CMS_SETTINGS: CMSSettings = {
   identity: {
     appName: 'Guber Smart',
     tagline: 'Dari ide jadi aplikasi, selangkah demi selangkah',
-    heroTitle: 'Bikin Aplikasi Web Sendiri, Tanpa Koding',
-    heroSubtitle: 'Bangun aplikasi web fungsional untuk bisnis, kantor, atau portofolio pribadi hanya dengan instruksi bahasa manusia.',
+    heroTitle: 'Buat App Web tanpa perlu paham koding',
+    heroSubtitle: 'Punya Ide Aplikasi? Wujudkan Tanpa Perlu Bisa Coding! Belajar membuat aplikasi web dari nol sampai online dengan bantuan AI Claude.',
     heroImages: [
       'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1600&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop',
@@ -30,18 +30,18 @@ export const INITIAL_CMS_SETTINGS: CMSSettings = {
     whatsapp: '6281234567890',
     logoUrl: '/favicon.svg',
     faviconUrl: '/favicon.svg',
-    metaTitle: 'Guber Smart - Bikin Aplikasi Web Sendiri, Tanpa Koding',
-    metaDescription: 'Portal belajar dan landing page bikin aplikasi web sendiri tanpa koding. Dari ide jadi aplikasi, selangkah demi selangkah.',
+    metaTitle: 'Guber Smart - Buat App Web tanpa perlu paham koding',
+    metaDescription: 'Punya Ide Aplikasi? Wujudkan Tanpa Perlu Bisa Coding! Buat aplikasi web dari nol sampai online hanya dengan bantuan AI Claude.',
   },
   runningText: {
     enabled: true,
-    text: '🔥 Promo Spesial: Dapatkan Akses Seluruh Kelas & Template Aplikasi AI! Klik di sini untuk melihat detail promo.',
+    text: '🔥 PROMO TERBATAS: DISKON 65% + 30%! Dapatkan Kelas Buat App Web Hanya Rp 399 rb. Kesempatan ini tidak akan lama!',
     bgColor: '#FF7A1A',
     textColor: '#FFFFFF',
     speed: 25,
     popupImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop',
-    popupTitle: 'Promo Spesial Member Baru',
-    popupDescription: 'Dapatkan akses eksklusif ke seluruh materi, modul update berkala, dan komunitas diskusi.',
+    popupTitle: '🔥 PROMO TERBATAS: DISKON 65% + 30%!',
+    popupDescription: 'Harga normal turun drastis jadi Rp 399 rb. Kesempatan ini tidak akan lama! Kamu tidak perlu jadi programmer. Kamu hanya perlu punya ide dan mau belajar.',
   },
   theme: {
     primaryColor: '#0B2A5B',
@@ -135,10 +135,16 @@ export const INITIAL_CMS_SETTINGS: CMSSettings = {
 export const INITIAL_COURSES: Course[] = [
   {
     id: 'course_1',
-    name: 'Bikin Website Tanpa Koding',
-    summary: 'Kuasai pembuatan landing page dan website profil profesional hanya dalam hitungan jam.',
-    description: 'Panduan lengkap dan praktis untuk membangun website impian Anda dari awal hingga siap diluncurkan ke internet tanpa menulis sintaks koding satu baris pun.',
-    price: 149000,
+    name: 'Buat App Web tanpa perlu paham koding',
+    headline: 'Punya Ide Aplikasi? Wujudkan Tanpa Perlu Bisa Coding! 🚀',
+    summary: 'Dulu, bikin aplikasi web berarti belajar coding bertahun-tahun atau bayar mahal ke developer. Sekarang tidak lagi. Di kelas ini, kamu belajar membuat aplikasi web dari nol sampai online, hanya dengan bantuan AI Claude, tanpa pengalaman coding sama sekali.',
+    description: `Dulu, bikin aplikasi web berarti belajar coding bertahun-tahun atau bayar mahal ke developer. Sekarang tidak lagi.
+
+Di kelas ini, kamu belajar membuat aplikasi web dari nol sampai online, hanya dengan bantuan AI Claude, tanpa pengalaman coding sama sekali.
+
+Kamu tidak perlu jadi programmer. Kamu hanya perlu punya ide dan mau belajar.`,
+    price: 399000,
+    promoNotice: '🔥 PROMO TERBATAS: DISKON 65% + 30%! 🔥\nHarga normal turun drastis. Kesempatan ini tidak akan lama!',
     lynkUrl: 'https://lynk.id/guber-smart/website-tanpa-koding',
     coverSource: 'tautan',
     coverValue: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
@@ -148,10 +154,19 @@ export const INITIAL_COURSES: Course[] = [
     modulesCount: 4,
     lessonsCount: 12,
     whatYouWillLearn: [
-      'Menyusun struktur landing page yang menjual',
-      'Memilih desain dan tata letak responsif untuk HP',
-      'Mengintegrasikan tombol kontak WhatsApp langsung',
-      'Menerbitkan website ke domain sendiri secara gratis',
+      'Skill Claude tingkat lanjut: tahu cara menulis prompt yang tepat agar hasilnya rapi dan sesuai keinginan',
+      'Semua tools GRATIS: tidak perlu keluar uang untuk software tambahan',
+      'Mudah dipakai: tanpa install aplikasi rumit',
+      'Dipandu sampai deploy: aplikasimu online lewat Vercel, bisa diakses siapa saja lewat link',
+      'Responsif di desktop dan mobile: tampilan otomatis menyesuaikan layar',
+      'Hasil nyata: di akhir kelas, kamu punya aplikasi yang benar-benar jadi',
+      'Dijamin berhasil: kami dampingi sampai aplikasimu online',
+    ],
+    targetAudience: [
+      'Ingin membuat website usaha, toko online, atau portofolio',
+      'Punya ide aplikasi tapi bingung mulai dari mana',
+      'Pemilik bisnis yang ingin mandiri tanpa bergantung pada developer',
+      'Pelajar, mahasiswa, atau pekerja yang ingin menambah skill digital',
     ],
   },
   {

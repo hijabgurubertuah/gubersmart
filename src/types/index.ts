@@ -77,6 +77,7 @@ export type ContentBlock =
 export interface Course {
   id: string;
   name: string;
+  headline?: string;
   summary: string;
   description: string;
   price: number;
@@ -89,6 +90,8 @@ export interface Course {
   modulesCount?: number;
   lessonsCount?: number;
   whatYouWillLearn: string[];
+  targetAudience?: string[];
+  promoNotice?: string;
 }
 
 export interface CourseModule {
