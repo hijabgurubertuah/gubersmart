@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { CMSSettings, Role } from '../../types';
 import { ImageUploader } from '../common/ImageUploader';
-import { RotateCcw, Save, Eye, Palette, Check } from 'lucide-react';
+import { RunningTextBanner } from '../common/RunningTextBanner';
+import { RotateCcw, Save, Eye, Palette, Check, Trash2, Megaphone, Images, Layers, Sparkles, Plus } from 'lucide-react';
 
 interface AdminCMSProps {
   role: Role;
@@ -21,15 +22,14 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
   // Local state copy
   const [formData, setFormData] = useState<CMSSettings>(JSON.parse(JSON.stringify(cms)));
   const [activeTab, setActiveTab] = useState<string>(
-    role === 'Superadmin' ? 'identity' : 'sections'
+    role === 'Superadmin' ? 'identity' : 'runningText'
   );
 
   // Tabs allowed based on role
-  // Superadmin: all 10
-  // Admin: Bagian Halaman (sections), Halaman (pages), Tombol (buttons), Navigasi (nav), Footer dan Kontak (footer)
   const allowedTabs = role === 'Superadmin'
     ? [
-        { id: 'identity', label: 'Identitas' },
+        { id: 'identity', label: 'Identitas & Banner' },
+        { id: 'runningText', label: 'Teks Berjalan' },
         { id: 'theme', label: 'Tema' },
         { id: 'navigation', label: 'Navigasi' },
         { id: 'buttons', label: 'Tombol' },
@@ -41,6 +41,8 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
         { id: 'save', label: 'Pratinjau & Simpan' },
       ]
     : [
+        { id: 'identity', label: 'Identitas & Banner' },
+        { id: 'runningText', label: 'Teks Berjalan' },
         { id: 'sections', label: 'Bagian Halaman' },
         { id: 'pages', label: 'Halaman' },
         { id: 'buttons', label: 'Tombol' },
@@ -70,6 +72,23 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
     setFormData(JSON.parse(JSON.stringify(cms)));
     onToast('Pengaturan dipulihkan ke bawaan');
   };
+
+  const runningTextData = formData.runningText || {
+    enabled: true,
+    text: '🔥 Promo Spesial: Dapatkan Akses Seluruh Kelas & Template Aplikasi AI!',
+    bgColor: '#FF7A1A',
+    textColor: '#FFFFFF',
+    speed: 25,
+    popupImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop',
+    popupTitle: 'Promo Spesial Member Baru',
+    popupDescription: 'Dapatkan akses eksklusif ke seluruh materi, modul update berkala, dan komunitas diskusi.',
+  };
+
+  const heroImagesData = formData.identity.heroImages || [
+    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1600&auto=format&fit=crop',
+  ];
 
   return (
     <div className="space-y-6">
@@ -108,9 +127,75 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
 
       {/* Tab Panels */}
       <div className="bg-white dark:bg-slate-900 rounded-[14px] p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-6">
-        {/* 1. Identitas (Superadmin) */}
+        {/* 1. Identitas & Logo */}
         {activeTab === 'identity' && (
-          <div className="space-y-4 max-w-2xl">
+          <div className="space-y-5 max-w-2xl">
+            {/* Logo Aplikasi Minimalis */}
+            <div className="p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Logo Aplikasi
+                  </label>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Unggah gambar logo (PNG/JPG/SVG/WebP) atau masukkan URL tautan langsung.
+                  </p>
+                </div>
+                {formData.identity.logoUrl && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData({
+                        ...formData,
+                        identity: { ...formData.identity, logoUrl: '' },
+                      })
+                    }
+                    className="text-xs text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 font-medium transition-colors"
+                  >
+                    Hapus Logo
+                  </button>
+                )}
+              </div>
+
+              <div>
+                <ImageUploader
+                  label=""
+                  source={
+                    (formData.identity.logoUrl?.includes('drive.google.com') ||
+                    formData.identity.logoUrl?.includes('googleusercontent.com') ||
+                    formData.identity.logoUrl?.startsWith('data:'))
+                      ? 'drive'
+                      : 'tautan'
+                  }
+                  value={formData.identity.logoUrl || ''}
+                  onChange={(_source, val) =>
+                    setFormData({
+                      ...formData,
+                      identity: { ...formData.identity, logoUrl: val },
+                    })
+                  }
+                />
+              </div>
+
+              {formData.identity.logoUrl && (
+                <div className="flex items-center gap-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-600 dark:text-slate-300">
+                  <span className="text-slate-400 shrink-0">Pratinjau di Navbar:</span>
+                  <div className="flex items-center gap-2.5 px-3 py-1.5 bg-white dark:bg-slate-900 rounded-[10px] border border-slate-200 dark:border-slate-700 shadow-2xs">
+                    <div className="w-8 h-8 rounded-[8px] bg-[#0B2A5B] flex items-center justify-center overflow-hidden shrink-0">
+                      <img
+                        src={formData.identity.logoUrl}
+                        alt="Logo Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="font-heading font-bold text-slate-900 dark:text-white text-sm">
+                      {formData.identity.appName || 'Guber Smart'}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Nama Aplikasi *
@@ -122,23 +207,6 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                   setFormData({
                     ...formData,
                     identity: { ...formData.identity, appName: e.target.value },
-                  })
-                }
-                className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Slogan *
-              </label>
-              <input
-                type="text"
-                value={formData.identity.tagline}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    identity: { ...formData.identity, tagline: e.target.value },
                   })
                 }
                 className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
@@ -177,6 +245,84 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                 }
                 className="w-full p-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px] resize-none"
               />
+            </div>
+
+            {/* Gambar Latar Banner Utama (Carousel) */}
+            <div className="p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Gambar Latar Banner Utama (Carousel Slider)
+                  </label>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Gambar background header di halaman utama yang bergeser otomatis secara berkala.
+                  </p>
+                </div>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-[#1E4FA8] dark:text-blue-300">
+                  {heroImagesData.length} Slide
+                </span>
+              </div>
+
+              {/* Grid slide images */}
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {heroImagesData.map((imgUrl, idx) => (
+                    <div
+                      key={idx}
+                      className="group relative aspect-video rounded-[12px] overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-900 shadow-xs"
+                    >
+                      <img src={imgUrl} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between p-2">
+                        <span className="text-xs font-bold text-white px-2 py-0.5 bg-black/60 rounded-md">
+                          Slide {idx + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = heroImagesData.filter((_, i) => i !== idx);
+                            setFormData({
+                              ...formData,
+                              identity: {
+                                ...formData.identity,
+                                heroImages: updated.length > 0 ? updated : ['https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1600&auto=format&fit=crop'],
+                              },
+                            });
+                          }}
+                          className="p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full transition-transform active:scale-90"
+                          title="Hapus slide ini"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Tambah slide baru */}
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    + Tambah Slide Gambar Latar Carousel
+                  </label>
+                  <ImageUploader
+                    label=""
+                    source="tautan"
+                    value=""
+                    onChange={(_source, val) => {
+                      if (val && val.trim() !== '') {
+                        const updated = [...heroImagesData, val.trim()];
+                        setFormData({
+                          ...formData,
+                          identity: {
+                            ...formData.identity,
+                            heroImages: updated,
+                          },
+                        });
+                        onToast('Slide gambar latar baru berhasil ditambahkan');
+                      }
+                    }}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -247,6 +393,254 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                   }
                   className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
                 />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 2. Teks Berjalan (Running Text) */}
+        {activeTab === 'runningText' && (
+          <div className="space-y-6 max-w-2xl">
+            {/* Toggle Running Text */}
+            <div className="flex items-center justify-between p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Aktifkan Teks Berjalan (Running Text)
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Teks pengumuman yang bergerak di bagian atas website dan dapat diklik untuk menampilkan popup gambar.
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={runningTextData.enabled}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      runningText: {
+                        ...runningTextData,
+                        enabled: e.target.checked,
+                      },
+                    })
+                  }
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF7A1A]"></div>
+              </label>
+            </div>
+
+            {/* Isi Teks */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Isi Teks Berjalan *
+              </label>
+              <textarea
+                rows={3}
+                value={runningTextData.text}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    runningText: {
+                      ...runningTextData,
+                      text: e.target.value,
+                    },
+                  })
+                }
+                placeholder="Contoh: 🔥 Promo Spesial Bulan Ini! Dapatkan Akses Seluruh Kelas. Klik di sini untuk detail."
+                className="w-full p-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/40"
+              />
+            </div>
+
+            {/* Setting Warna & Kecepatan */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Warna Latar */}
+              <div className="p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Warna Latar (Background)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={runningTextData.bgColor || '#FF7A1A'}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        runningText: {
+                          ...runningTextData,
+                          bgColor: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    value={runningTextData.bgColor || '#FF7A1A'}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        runningText: {
+                          ...runningTextData,
+                          bgColor: e.target.value,
+                        },
+                      })
+                    }
+                    className="flex-1 h-10 px-3 text-xs font-mono uppercase bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[10px]"
+                  />
+                </div>
+                {/* Color Presets */}
+                <div className="flex items-center gap-1.5 pt-1">
+                  {['#FF7A1A', '#0B2A5B', '#10B981', '#DC2626', '#7C3AED', '#0F172A'].map((c) => (
+                    <button
+                      type="button"
+                      key={c}
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          runningText: { ...runningTextData, bgColor: c },
+                        })
+                      }
+                      style={{ backgroundColor: c }}
+                      className="w-5 h-5 rounded-full border border-white/40 shadow-xs hover:scale-110 transition-transform"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Warna Teks */}
+              <div className="p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Warna Teks
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={runningTextData.textColor || '#FFFFFF'}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        runningText: {
+                          ...runningTextData,
+                          textColor: e.target.value,
+                        },
+                      })
+                    }
+                    className="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    value={runningTextData.textColor || '#FFFFFF'}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        runningText: {
+                          ...runningTextData,
+                          textColor: e.target.value,
+                        },
+                      })
+                    }
+                    className="flex-1 h-10 px-3 text-xs font-mono uppercase bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[10px]"
+                  />
+                </div>
+                {/* Color Presets */}
+                <div className="flex items-center gap-1.5 pt-1">
+                  {['#FFFFFF', '#0F172A', '#FEF08A', '#93C5FD', '#FDE047'].map((c) => (
+                    <button
+                      type="button"
+                      key={c}
+                      onClick={() =>
+                        setFormData({
+                          ...formData,
+                          runningText: { ...runningTextData, textColor: c },
+                        })
+                      }
+                      style={{ backgroundColor: c }}
+                      className="w-5 h-5 rounded-full border border-slate-300 shadow-xs hover:scale-110 transition-transform"
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Section: Gambar Popup Saat Diklik */}
+            <div className="p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-4">
+              <div>
+                <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  Gambar Popup (Saat Running Text Diklik)
+                </h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Pilih atau unggah gambar banner/voucher/pengumuman yang akan muncul dalam popup saat pengunjung mengklik teks berjalan.
+                </p>
+              </div>
+
+              <ImageUploader
+                label="Gambar Pengumuman Popup"
+                source="tautan"
+                value={runningTextData.popupImage || ''}
+                onChange={(_source, val) =>
+                  setFormData({
+                    ...formData,
+                    runningText: {
+                      ...runningTextData,
+                      popupImage: val,
+                    },
+                  })
+                }
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Judul Popup (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    value={runningTextData.popupTitle || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        runningText: {
+                          ...runningTextData,
+                          popupTitle: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Contoh: Promo Spesial Member Baru"
+                    className="w-full h-10 px-3 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[10px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Keterangan Tambahan (Opsional)
+                  </label>
+                  <input
+                    type="text"
+                    value={runningTextData.popupDescription || ''}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        runningText: {
+                          ...runningTextData,
+                          popupDescription: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Contoh: Berlaku s/d akhir bulan ini."
+                    className="w-full h-10 px-3 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[10px]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Live Preview Bar */}
+            <div className="space-y-2 pt-2">
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Pratinjau Langsung (Klik untuk uji coba popup):
+              </label>
+              <div className="rounded-[14px] overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
+                <RunningTextBanner settings={runningTextData} />
               </div>
             </div>
           </div>

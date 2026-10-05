@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CMSSettings, Course, AppExample, Testimonial, FaqItem } from '../../types';
 import { formatRupiah } from '../../utils/crypto';
 import {
-  Sparkles,
   Smartphone,
   Layers,
   ArrowRight,
-  ExternalLink,
   ChevronDown,
-  Star,
-  Check,
   ShieldCheck,
   Zap,
   BookOpen,
+  ChevronLeft,
+  ChevronRight,
   LayoutGrid,
+  ExternalLink,
+  Star,
 } from 'lucide-react';
 
 interface HomePageProps {
@@ -37,12 +37,45 @@ export const HomePage: React.FC<HomePageProps> = ({
 }) => {
   const [openFaqId, setOpenFaqId] = useState<string | null>(faqs[0]?.id || null);
 
+  // Background Carousel Slides
+  const defaultHeroSlides = [
+    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop',
+    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1600&auto=format&fit=crop',
+  ];
+
+  const heroSlides =
+    cms.identity.heroImages && cms.identity.heroImages.length > 0
+      ? cms.identity.heroImages
+      : defaultHeroSlides;
+
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  // Auto-slide carousel every 5.5s
+  useEffect(() => {
+    if (heroSlides.length <= 1) return;
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 5500);
+    return () => clearInterval(interval);
+  }, [heroSlides.length]);
+
+  const handlePrevSlide = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
+  };
+
+  const handleNextSlide = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveSlide((prev) => (prev + 1) % heroSlides.length);
+  };
+
   const getSection = (id: string) => cms.sections.find((s) => s.id === id);
 
   const secHero = getSection('sec_hero');
+  const secFeatured = getSection('sec_featured');
   const secBenefits = getSection('sec_benefits');
   const secHow = getSection('sec_how');
-  const secFeatured = getSection('sec_featured');
   const secExamples = getSection('sec_examples');
   const secTesti = getSection('sec_testimonials');
   const secFaq = getSection('sec_faq');
@@ -50,7 +83,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
   const visibleCourses = courses
     .filter((c) => c.status === 'tampil')
-    .slice(0, 3);
+    .slice(0, 6);
 
   const visibleExamples = appExamples
     .filter((e) => e.isVisible)
@@ -64,155 +97,105 @@ export const HomePage: React.FC<HomePageProps> = ({
 
   return (
     <div className="w-full space-y-16 sm:space-y-24 pb-20">
-      {/* 1. Hero Section */}
+      {/* 1. Hero Section with Background Carousel */}
       {secHero?.isVisible && (
-        <section className="relative overflow-hidden pt-10 pb-16 sm:pt-16 sm:pb-24 bg-gradient-to-b from-blue-50/60 to-transparent dark:from-slate-900/50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-3xl mx-auto space-y-6">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0B2A5B]/10 dark:bg-blue-400/10 text-[#0B2A5B] dark:text-blue-300 text-xs sm:text-sm font-semibold tracking-wide">
-                <Sparkles className="w-4 h-4 text-[#FF7A1A]" />
-                {cms.identity.tagline}
+        <section className="relative overflow-hidden min-h-[500px] sm:min-h-[580px] lg:min-h-[640px] flex items-center justify-center bg-slate-950 group">
+          {/* Background Images Carousel */}
+          <div className="absolute inset-0 z-0">
+            {heroSlides.map((slideUrl, idx) => (
+              <div
+                key={idx}
+                className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
+                  idx === activeSlide
+                    ? 'opacity-100 scale-100'
+                    : 'opacity-0 scale-105 pointer-events-none'
+                }`}
+              >
+                <img
+                  src={slideUrl}
+                  alt={`Hero Slide ${idx + 1}`}
+                  className="w-full h-full object-cover object-center"
+                />
               </div>
+            ))}
 
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-bold font-heading text-[#0B2A5B] dark:text-white tracking-tight leading-tight sm:leading-tight">
+            {/* Dark Aesthetic Translucent Gradient Overlay for crisp text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-900/60 backdrop-blur-[1px]" />
+          </div>
+
+          {/* Carousel Arrows on Desktop (Hover) */}
+          {heroSlides.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrevSlide}
+                className="absolute left-4 sm:left-6 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white/80 hover:text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 active:scale-95"
+                aria-label="Slide sebelumnya"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextSlide}
+                className="absolute right-4 sm:right-6 z-20 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 text-white/80 hover:text-white flex items-center justify-center backdrop-blur-xs transition-all opacity-0 group-hover:opacity-100 active:scale-95"
+                aria-label="Slide selanjutnya"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
+
+          {/* Hero Content (No star icon at top) */}
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 text-center">
+            <div className="max-w-3xl mx-auto space-y-6">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold font-heading text-white tracking-tight leading-tight sm:leading-tight drop-shadow-md">
                 {cms.identity.heroTitle}
               </h1>
 
-              <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-normal max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-normal max-w-2xl mx-auto drop-shadow-sm">
                 {cms.identity.heroSubtitle}
               </p>
 
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-4">
                 <button
                   onClick={() => onNavigate('/kelas')}
-                  className="w-full sm:w-auto min-h-[48px] px-8 py-3 text-base font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[14px] shadow-lg hover:shadow-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto min-h-[48px] px-8 py-3.5 text-base font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[14px] shadow-xl hover:shadow-2xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   Lihat Kelas
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => onNavigate('/kontak')}
-                  className="w-full sm:w-auto min-h-[48px] px-8 py-3 text-base font-semibold text-[#0B2A5B] dark:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-[14px] transition-colors flex items-center justify-center"
+                  className="w-full sm:w-auto min-h-[48px] px-8 py-3.5 text-base font-semibold text-white bg-white/15 hover:bg-white/25 backdrop-blur-md border border-white/30 rounded-[14px] transition-all flex items-center justify-center shadow-md active:scale-[0.98]"
                 >
                   Hubungi Kami
                 </button>
               </div>
             </div>
           </div>
+
+          {/* Carousel Slide Indicator Dots */}
+          {heroSlides.length > 1 && (
+            <div className="absolute bottom-5 inset-x-0 z-20 flex items-center justify-center gap-2">
+              {heroSlides.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setActiveSlide(idx)}
+                  className={`transition-all rounded-full ${
+                    idx === activeSlide
+                      ? 'w-7 h-2 bg-[#FF7A1A]'
+                      : 'w-2 h-2 bg-white/40 hover:bg-white/70'
+                  }`}
+                  aria-label={`Ke slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </section>
       )}
 
-      {/* 2. Benefits Section */}
-      {secBenefits?.isVisible && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-              {secBenefits.title}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
-                <Zap className="w-6 h-6 text-[#FF7A1A]" />
-              </div>
-              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Instruksi Bahasa Manusia
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Cukup deskripsikan aplikasi yang Anda inginkan, teknologi AI akan memandu perwujudannya selangkah demi selangkah.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
-                <Layers className="w-6 h-6 text-[#FF7A1A]" />
-              </div>
-              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Pustaka Skill Claude
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Unduh berkas keahlian siap pasang untuk mempercepat pembuatan modul absensi, toko online, dan portal web.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
-                <Smartphone className="w-6 h-6 text-[#FF7A1A]" />
-              </div>
-              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Sempurna di Layar HP
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Seluruh aplikasi hasil latihan responsif dan nyaman digunakan dengan satu tangan di layar ponsel.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
-                <ShieldCheck className="w-6 h-6 text-[#FF7A1A]" />
-              </div>
-              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Sertifikat Kelulusan Resmi
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Dapatkan sertifikat digital dengan nomor verifikasi unik setelah menuntaskan seluruh pelajaran dan kuis.
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 3. How It Works Section */}
-      {secHow?.isVisible && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-              {secHow.title}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-slate-900 rounded-[14px] border border-slate-100 dark:border-slate-800 shadow-sm">
-              <div className="w-14 h-14 rounded-full bg-[#0B2A5B] text-white font-heading font-bold text-xl flex items-center justify-center mb-5">
-                1
-              </div>
-              <h3 className="text-lg font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Beli Kelas di Lynk.id
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Pilih topik kelas yang Anda butuhkan dan selesaikan pembelian secara aman di halaman Lynk.id.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-slate-900 rounded-[14px] border border-slate-100 dark:border-slate-800 shadow-sm">
-              <div className="w-14 h-14 rounded-full bg-[#1E4FA8] text-white font-heading font-bold text-xl flex items-center justify-center mb-5">
-                2
-              </div>
-              <h3 className="text-lg font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Aktivasi Kode Akses
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Gunakan kode akses pribadi dari admin untuk masuk ke ruang member portal belajar Guber Smart.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-slate-900 rounded-[14px] border border-slate-100 dark:border-slate-800 shadow-sm">
-              <div className="w-14 h-14 rounded-full bg-[#FF7A1A] text-white font-heading font-bold text-xl flex items-center justify-center mb-5">
-                3
-              </div>
-              <h3 className="text-lg font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Praktik dan Terbitkan
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Ikuti video, centang panduan bertahap, unduh skill pendukung, dan luncurkan aplikasi web Anda.
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 4. Featured Classes */}
+      {/* 2. Featured Classes (LANGSUNG SETELAH HEADER) */}
       {secFeatured?.isVisible && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-12 gap-4">
@@ -220,6 +203,9 @@ export const HomePage: React.FC<HomePageProps> = ({
               <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#0B2A5B] dark:text-white">
                 {secFeatured.title}
               </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                {secFeatured.description}
+              </p>
             </div>
             <button
               onClick={() => onNavigate('/kelas')}
@@ -289,13 +275,122 @@ export const HomePage: React.FC<HomePageProps> = ({
                       rel="noopener noreferrer"
                       className="h-10 px-4 text-xs font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center gap-1.5 transition-colors shadow-xs active:scale-[0.98]"
                     >
-                      Beli
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      Beli di Lynk.id
                     </a>
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* 3. Benefits Section */}
+      {secBenefits?.isVisible && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#0B2A5B] dark:text-white">
+              {secBenefits.title}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
+                <Zap className="w-6 h-6 text-[#FF7A1A]" />
+              </div>
+              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
+                Instruksi Bahasa Manusia
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Cukup deskripsikan aplikasi yang Anda inginkan, teknologi AI akan memandu perwujudannya selangkah demi selangkah.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
+                <Layers className="w-6 h-6 text-[#FF7A1A]" />
+              </div>
+              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
+                Pustaka Skill Claude
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Unduh berkas keahlian siap pasang untuk mempercepat pembuatan modul absensi, toko online, dan portal web.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
+                <Smartphone className="w-6 h-6 text-[#FF7A1A]" />
+              </div>
+              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
+                Sempurna di Layar HP
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Seluruh aplikasi hasil latihan responsif dan nyaman digunakan dengan satu tangan di layar ponsel.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
+                <ShieldCheck className="w-6 h-6 text-[#FF7A1A]" />
+              </div>
+              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
+                Sertifikat Kelulusan Resmi
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Dapatkan sertifikat digital dengan nomor verifikasi unik setelah menuntaskan seluruh pelajaran dan kuis.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 4. How It Works Section */}
+      {secHow?.isVisible && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#0B2A5B] dark:text-white">
+              {secHow.title}
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-slate-900 rounded-[14px] border border-slate-100 dark:border-slate-800 shadow-sm">
+              <div className="w-14 h-14 rounded-full bg-[#0B2A5B] text-white font-heading font-bold text-xl flex items-center justify-center mb-5">
+                1
+              </div>
+              <h3 className="text-lg font-bold font-heading text-slate-900 dark:text-white mb-2">
+                Beli Kelas di Lynk.id
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Pilih topik kelas yang Anda butuhkan dan selesaikan pembelian secara aman di halaman Lynk.id.
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-slate-900 rounded-[14px] border border-slate-100 dark:border-slate-800 shadow-sm">
+              <div className="w-14 h-14 rounded-full bg-[#1E4FA8] text-white font-heading font-bold text-xl flex items-center justify-center mb-5">
+                2
+              </div>
+              <h3 className="text-lg font-bold font-heading text-slate-900 dark:text-white mb-2">
+                Aktivasi Kode Akses
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Gunakan kode akses pribadi dari admin untuk masuk ke ruang member portal belajar Guber Smart.
+              </p>
+            </div>
+
+            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-slate-900 rounded-[14px] border border-slate-100 dark:border-slate-800 shadow-sm">
+              <div className="w-14 h-14 rounded-full bg-[#FF7A1A] text-white font-heading font-bold text-xl flex items-center justify-center mb-5">
+                3
+              </div>
+              <h3 className="text-lg font-bold font-heading text-slate-900 dark:text-white mb-2">
+                Praktik dan Terbitkan
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Ikuti video, centang panduan bertahap, unduh skill pendukung, dan luncurkan aplikasi web Anda.
+              </p>
+            </div>
           </div>
         </section>
       )}

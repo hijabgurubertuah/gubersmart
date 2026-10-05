@@ -5,6 +5,7 @@ import { Footer } from './components/common/Footer';
 import { LoginModal } from './components/common/LoginModal';
 import { ToastContainer } from './components/common/ToastContainer';
 import { WhatsAppFloating } from './components/common/WhatsAppFloating';
+import { RunningTextBanner } from './components/common/RunningTextBanner';
 
 // Public pages
 import { HomePage } from './components/public/HomePage';
@@ -435,6 +436,11 @@ export function App() {
     <div className="min-h-screen flex flex-col bg-[#F7F9FC] dark:bg-[#0B1120] text-[#0F172A] dark:text-[#F1F5F9]">
       {/* Toast notifications */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Running Text Announcement Banner */}
+      <div className="no-print">
+        <RunningTextBanner settings={cms.runningText} />
+      </div>
 
       {/* Navigation Header */}
       <div className="no-print">

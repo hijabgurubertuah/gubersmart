@@ -104,11 +104,11 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
           <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white flex items-center gap-2">
             Sinkronisasi Google Drive Otomatis
             <span className="text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800/60">
-              Auto-Folder
+              Auto-Folder & Galeri Drive
             </span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Folder Google Drive akan dibuat otomatis oleh skrip. ID folder otomatis diambil, ditampilkan di aplikasi, dan disimpan ke Firebase!
+            Folder Google Drive otomatis dibuat. Mendukung galeri gambar dan deteksi berkas yang di-paste langsung ke Google Drive!
           </p>
         </div>
       </div>

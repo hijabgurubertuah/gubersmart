@@ -17,8 +17,12 @@ export const Footer: React.FC<FooterProps> = ({ cms, onNavigate }) => {
           {/* Col 1: Identity */}
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-[8px] bg-white flex items-center justify-center text-[#0B2A5B] font-bold font-heading">
-                G
+              <div className="w-8 h-8 rounded-[8px] bg-white flex items-center justify-center text-[#0B2A5B] font-bold font-heading overflow-hidden shrink-0">
+                {identity.logoUrl && identity.logoUrl.trim() !== '' ? (
+                  <img src={identity.logoUrl} alt={identity.appName || 'Logo'} className="w-full h-full object-cover" />
+                ) : (
+                  identity.appName ? identity.appName.charAt(0) : 'G'
+                )}
               </div>
               <span className="font-heading font-bold text-lg text-white">
                 {identity.appName}

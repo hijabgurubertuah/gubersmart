@@ -128,6 +128,12 @@ class StoreManager {
     if (!this.cms.sync) {
       this.cms.sync = { webAppUrl: '', driveFolderId: '', token: '' };
     }
+    if (!this.cms.runningText) {
+      this.cms.runningText = INITIAL_CMS_SETTINGS.runningText;
+    }
+    if (!this.cms.identity.heroImages || this.cms.identity.heroImages.length === 0) {
+      this.cms.identity.heroImages = INITIAL_CMS_SETTINGS.identity.heroImages;
+    }
     this.courses = this.load(STORAGE_KEYS.COURSES, INITIAL_COURSES);
     this.modules = this.load(STORAGE_KEYS.MODULES, INITIAL_MODULES);
     this.lessons = this.load(STORAGE_KEYS.LESSONS, INITIAL_LESSONS);
@@ -374,8 +380,8 @@ class StoreManager {
     const mergedIdentity = {
       ...this.cms.identity,
       ...(remoteCms.identity || {}),
-      logoUrl: (remoteCms.identity?.logoUrl && remoteCms.identity.logoUrl.trim() !== '')
-        ? remoteCms.identity.logoUrl
+      logoUrl: (remoteCms.identity && 'logoUrl' in remoteCms.identity)
+        ? (remoteCms.identity.logoUrl || '')
         : this.cms.identity.logoUrl,
     };
 

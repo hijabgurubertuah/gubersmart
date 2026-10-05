@@ -131,6 +131,66 @@ function doPost(e) {
       });
     }
 
+    // 5. Galeri: Ambil Daftar Berkas / Gambar dari Folder Drive
+    if (action === "listDriveFiles" || action === "listImages") {
+      const folder = getOrCreateTargetFolder(data.driveFolderId);
+      const files = folder.getFiles();
+      const fileList = [];
+      const maxFiles = data.limit || 80;
+      const onlyImages = data.onlyImages !== false;
+
+      while (files.hasNext() && fileList.length < maxFiles) {
+        const file = files.next();
+        const mimeType = file.getMimeType();
+
+        // Filter file gambar jika onlyImages diaktifkan
+        const isImage = mimeType.indexOf("image/") === 0;
+        if (onlyImages && !isImage) {
+          continue;
+        }
+
+        // Pastikan akses publik agar bisa ditampilkan di browser
+        try {
+          if (file.getSharingAccess() !== DriveApp.Access.ANYONE_WITH_LINK) {
+            file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          }
+        } catch (e) {}
+
+        const fileId = file.getId();
+        const directUrl = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1600";
+        const thumbnailUrl = "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w400";
+        const lh3Url = "https://lh3.googleusercontent.com/d/" + fileId;
+        const downloadUrl = file.getDownloadUrl();
+        const viewUrl = file.getUrl();
+
+        fileList.push({
+          fileId: fileId,
+          name: file.getName(),
+          mimeType: mimeType,
+          size: file.getSize(),
+          updatedAt: file.getLastUpdated().toISOString(),
+          directUrl: directUrl,
+          thumbnailUrl: thumbnailUrl,
+          lh3Url: lh3Url,
+          downloadUrl: downloadUrl,
+          viewUrl: viewUrl
+        });
+      }
+
+      // Urutkan file terbaru di posisi paling atas
+      fileList.sort(function(a, b) {
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      });
+
+      return responseJSON({
+        status: "success",
+        folderId: folder.getId(),
+        folderName: folder.getName(),
+        folderUrl: folder.getUrl(),
+        files: fileList
+      });
+    }
+
     return responseJSON({ status: "error", message: "Aksi tidak dikenal: " + action });
 
   } catch (error) {
@@ -148,6 +208,55 @@ function responseJSON(obj) {
 
 function doGet(e) {
   const folder = getOrCreateTargetFolder();
+  const action = (e && e.parameter && e.parameter.action) ? e.parameter.action : "";
+
+  if (action === "listImages" || action === "listDriveFiles") {
+    const files = folder.getFiles();
+    const fileList = [];
+    const maxFiles = 80;
+
+    while (files.hasNext() && fileList.length < maxFiles) {
+      const file = files.next();
+      const mimeType = file.getMimeType();
+
+      if (mimeType.indexOf("image/") !== 0) {
+        continue;
+      }
+
+      try {
+        if (file.getSharingAccess() !== DriveApp.Access.ANYONE_WITH_LINK) {
+          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        }
+      } catch (err) {}
+
+      const fileId = file.getId();
+      fileList.push({
+        fileId: fileId,
+        name: file.getName(),
+        mimeType: mimeType,
+        size: file.getSize(),
+        updatedAt: file.getLastUpdated().toISOString(),
+        directUrl: "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w1600",
+        thumbnailUrl: "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w400",
+        lh3Url: "https://lh3.googleusercontent.com/d/" + fileId,
+        downloadUrl: file.getDownloadUrl(),
+        viewUrl: file.getUrl()
+      });
+    }
+
+    fileList.sort(function(a, b) {
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+
+    return responseJSON({
+      status: "success",
+      folderId: folder.getId(),
+      folderName: folder.getName(),
+      folderUrl: folder.getUrl(),
+      files: fileList
+    });
+  }
+
   return responseJSON({
     status: "success",
     service: "Guber Smart Google Apps Script Bridge",
@@ -298,4 +407,68 @@ export function fileToBase64(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
+export interface DriveFileItem {
+  fileId: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  updatedAt: string;
+  directUrl: string;
+  thumbnailUrl: string;
+  lh3Url?: string;
+  downloadUrl?: string;
+  viewUrl?: string;
+}
+
+export interface ListDriveFilesOptions {
+  webAppUrl: string;
+  driveFolderId?: string;
+  onlyImages?: boolean;
+  limit?: number;
+}
+
+export async function listDriveFiles(options: ListDriveFilesOptions): Promise<{
+  status: 'success' | 'error';
+  files: DriveFileItem[];
+  folderId?: string;
+  folderName?: string;
+  folderUrl?: string;
+  message?: string;
+}> {
+  const { webAppUrl, driveFolderId, onlyImages = true, limit = 80 } = options;
+
+  if (!webAppUrl || webAppUrl.trim().length < 10) {
+    throw new Error('URL Web App Google Script belum diatur');
+  }
+
+  const payload = {
+    action: 'listImages',
+    driveFolderId: driveFolderId?.trim() || '',
+    onlyImages,
+    limit,
+  };
+
+  const response = await fetch(webAppUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const resJson = await response.json();
+  if (resJson.status === 'success') {
+    return {
+      status: 'success',
+      files: resJson.files || [],
+      folderId: resJson.folderId,
+      folderName: resJson.folderName,
+      folderUrl: resJson.folderUrl,
+    };
+  } else {
+    throw new Error(resJson.message || 'Gagal memuat berkas dari Google Drive');
+  }
+}
+
 

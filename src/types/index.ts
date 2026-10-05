@@ -234,13 +234,26 @@ export interface ActivityLog {
   details?: string;
 }
 
+// Running Text / Marquee with Image Popup
+export interface RunningTextSettings {
+  enabled: boolean;
+  text: string;
+  bgColor: string;
+  textColor: string;
+  speed: number;
+  popupImage: string;
+  popupTitle?: string;
+  popupDescription?: string;
+}
+
 // CMS & Settings
 export interface CMSSettings {
   identity: {
     appName: string;
-    tagline: string;
+    tagline?: string;
     heroTitle: string;
     heroSubtitle: string;
+    heroImages?: string[];
     lynkUrl: string;
     whatsapp: string;
     logoUrl: string;
@@ -248,6 +261,7 @@ export interface CMSSettings {
     metaTitle: string;
     metaDescription: string;
   };
+  runningText?: RunningTextSettings;
   theme: {
     primaryColor: string;
     secondaryColor: string;
