@@ -134,6 +134,13 @@ class StoreManager {
     if (!this.cms.identity.heroImages || this.cms.identity.heroImages.length === 0) {
       this.cms.identity.heroImages = INITIAL_CMS_SETTINGS.identity.heroImages;
     }
+    const secFeatured = this.cms.sections?.find((s) => s.id === 'sec_featured');
+    if (secFeatured) {
+      if (secFeatured.title === 'Kelas Unggulan') {
+        secFeatured.title = 'Produk Guber Smart';
+      }
+      secFeatured.description = '';
+    }
     this.courses = this.load(STORAGE_KEYS.COURSES, INITIAL_COURSES);
     this.modules = this.load(STORAGE_KEYS.MODULES, INITIAL_MODULES);
     this.lessons = this.load(STORAGE_KEYS.LESSONS, INITIAL_LESSONS);

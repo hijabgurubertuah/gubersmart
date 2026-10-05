@@ -73,12 +73,7 @@ export const ClassesPage: React.FC<ClassesPageProps> = ({
                     <BookOpen className="w-10 h-10 text-slate-400 group-hover:scale-110 transition-transform" />
                   )}
                 </div>
-                <div className="p-5 space-y-3">
-                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                    <span>{course.duration}</span>
-                    <span>{course.modulesCount || 4} Modul</span>
-                  </div>
-
+                <div className="p-5 space-y-2">
                   <h3
                     onClick={() => onOpenClassDetail(course.id)}
                     className="text-lg font-bold font-heading text-slate-900 dark:text-white hover:text-[#1E4FA8] transition-colors cursor-pointer"
@@ -98,18 +93,12 @@ export const ClassesPage: React.FC<ClassesPageProps> = ({
                     {formatRupiah(course.price)}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => onOpenClassDetail(course.id)}
-                    className="h-10 px-3.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-[12px] transition-colors"
-                  >
-                    Rincian
-                  </button>
+                <div>
                   <a
                     href={course.lynkUrl || defaultLynkUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-10 px-4 text-xs font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center gap-1.5 transition-colors shadow-xs active:scale-[0.98]"
+                    className="h-10 px-5 text-xs font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center gap-1.5 transition-colors shadow-xs active:scale-[0.98]"
                   >
                     Beli
                     <ExternalLink className="w-3.5 h-3.5" />

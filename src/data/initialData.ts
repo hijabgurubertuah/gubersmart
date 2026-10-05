@@ -70,7 +70,7 @@ export const INITIAL_CMS_SETTINGS: CMSSettings = {
     { id: 'sec_hero', title: 'Banner Utama', description: 'Pengantar dan judul utama', isVisible: true, order: 1 },
     { id: 'sec_benefits', title: 'Manfaat', description: 'Keunggulan belajar di Guber Smart', isVisible: true, order: 2 },
     { id: 'sec_how', title: 'Cara Belajar', description: '3 langkah praktis dari nol', isVisible: true, order: 3 },
-    { id: 'sec_featured', title: 'Kelas Unggulan', description: 'Daftar kelas terlaris', isVisible: true, order: 4 },
+    { id: 'sec_featured', title: 'Produk Guber Smart', description: '', isVisible: true, order: 4 },
     { id: 'sec_examples', title: 'Sorotan Aplikasi', description: 'Contoh nyata hasil karya', isVisible: true, order: 5 },
     { id: 'sec_testimonials', title: 'Testimoni', description: 'Ulasan asli para member', isVisible: true, order: 6 },
     { id: 'sec_faq', title: 'Tanya Jawab', description: 'Pertanyaan sering diajukan', isVisible: true, order: 7 },
