@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from './hooks/useStore';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
@@ -63,6 +63,116 @@ export function App() {
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
+  // Helper to sync route to URL hash & localStorage so refresh stays on the exact page
+  const syncRouteToHash = useCallback(
+    (
+      path: string,
+      classId: string | null = null,
+      lessonId: string | null = null,
+      slug: string | null = null,
+      certId: string | null = null
+    ) => {
+      try {
+        let hash = '#' + path;
+        const params = new URLSearchParams();
+        if (classId) params.set('id', classId);
+        if (lessonId) params.set('lesson', lessonId);
+        if (slug) params.set('slug', slug);
+        if (certId) params.set('cert', certId);
+
+        const qs = params.toString();
+        if (qs) {
+          hash += '?' + qs;
+        }
+
+        if (window.location.hash !== hash) {
+          window.history.replaceState(null, '', hash);
+        }
+
+        localStorage.setItem(
+          'guber_active_route',
+          JSON.stringify({
+            path,
+            selectedClassId: classId,
+            selectedLessonId: lessonId,
+            staticPageSlug: slug,
+            certCourseId: certId,
+          })
+        );
+      } catch {
+        // ignore
+      }
+    },
+    []
+  );
+
+  // Restore route state from window.location.hash or localStorage on initial mount
+  useEffect(() => {
+    const parseAndApplyRoute = () => {
+      try {
+        const rawHash = window.location.hash.replace(/^#/, '');
+        if (rawHash) {
+          const [pathPart, queryPart] = rawHash.split('?');
+          const params = new URLSearchParams(queryPart || '');
+
+          const path = pathPart || '/';
+          const classId = params.get('id');
+          const lessonId = params.get('lesson');
+          const slug = params.get('slug');
+          const certId = params.get('cert');
+
+          if (path.startsWith('/halaman/')) {
+            const pageSlug = path.replace('/halaman/', '');
+            setStaticPageSlug(pageSlug);
+            setCurrentPath('/halaman');
+          } else {
+            setCurrentPath(path);
+            if (classId) setSelectedClassId(classId);
+            if (lessonId) setSelectedLessonId(lessonId);
+            if (slug) setStaticPageSlug(slug);
+            if (certId) setCertCourseId(certId);
+          }
+          return;
+        }
+
+        // Fallback to localStorage if no hash
+        const saved = localStorage.getItem('guber_active_route');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.path) {
+            setCurrentPath(parsed.path);
+            if (parsed.selectedClassId) setSelectedClassId(parsed.selectedClassId);
+            if (parsed.selectedLessonId) setSelectedLessonId(parsed.selectedLessonId);
+            if (parsed.staticPageSlug) setStaticPageSlug(parsed.staticPageSlug);
+            if (parsed.certCourseId) setCertCourseId(parsed.certCourseId);
+
+            let newHash = '#' + parsed.path;
+            const p = new URLSearchParams();
+            if (parsed.selectedClassId) p.set('id', parsed.selectedClassId);
+            if (parsed.selectedLessonId) p.set('lesson', parsed.selectedLessonId);
+            if (parsed.staticPageSlug) p.set('slug', parsed.staticPageSlug);
+            if (parsed.certCourseId) p.set('cert', parsed.certCourseId);
+            const qs = p.toString();
+            if (qs) newHash += '?' + qs;
+            window.history.replaceState(null, '', newHash);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    parseAndApplyRoute();
+
+    window.addEventListener('hashchange', parseAndApplyRoute);
+    window.addEventListener('popstate', parseAndApplyRoute);
+
+    return () => {
+      window.removeEventListener('hashchange', parseAndApplyRoute);
+      window.removeEventListener('popstate', parseAndApplyRoute);
+    };
+  }, []);
+
   // Apply CMS theme & dynamic favicon
   useEffect(() => {
     document.title = cms.identity.appName ? `${cms.identity.appName}` : 'Guber Smart';
@@ -112,6 +222,7 @@ export function App() {
       const slug = path.replace('/halaman/', '');
       setStaticPageSlug(slug);
       setCurrentPath('/halaman');
+      syncRouteToHash('/halaman', null, null, slug, null);
       return;
     }
 
@@ -130,12 +241,14 @@ export function App() {
     }
 
     setCurrentPath(path);
+    syncRouteToHash(path);
   };
 
   // Open class detail
   const handleOpenClassDetail = (courseId: string) => {
     setSelectedClassId(courseId);
     setCurrentPath('/kelas-detail');
+    syncRouteToHash('/kelas-detail', courseId, null, null, null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -143,18 +256,21 @@ export function App() {
   const handleMemberOpenClass = (courseId: string) => {
     setSelectedClassId(courseId);
     setCurrentPath('/member/kelas');
+    syncRouteToHash('/member/kelas', courseId, null, null, null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleMemberOpenLesson = (lessonId: string) => {
     setSelectedLessonId(lessonId);
     setCurrentPath('/member/pelajaran');
+    syncRouteToHash('/member/pelajaran', selectedClassId, lessonId, null, null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleMemberOpenCert = (courseId: string) => {
     setCertCourseId(courseId);
     setCurrentPath('/member/sertifikat');
+    syncRouteToHash('/member/sertifikat', null, null, null, courseId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -484,7 +600,7 @@ export function App() {
           onOpenLogin={() => setIsLoginModalOpen(true)}
           onLogout={() => {
             store.logout();
-            setCurrentPath('/');
+            handleNavigate('/');
             showToast('Berhasil keluar');
           }}
           onInstall={installApp}

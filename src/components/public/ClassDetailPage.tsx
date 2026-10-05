@@ -90,9 +90,11 @@ export const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
           </div>
 
           <div>
-            <div className="text-xs text-slate-400 line-through">
-              Rp 1.140.000
-            </div>
+            {course.originalPrice && course.originalPrice > course.price ? (
+              <div className="text-xs text-slate-400 line-through">
+                {formatRupiah(course.originalPrice)}
+              </div>
+            ) : null}
             <span className="text-2xl sm:text-3xl font-bold text-[#0B2A5B] dark:text-white font-heading">
               {formatRupiah(course.price)}
             </span>
@@ -184,66 +186,6 @@ export const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
               </a>
             </div>
           </div>
-
-          {/* Curriculum Accordion */}
-          {courseModules.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-                Silabus Modul
-              </h2>
-
-              <div className="space-y-3">
-                {courseModules.map((mod) => {
-                  const isOpen = openModuleId === mod.id;
-                  const modLessons = lessons
-                    .filter((l) => l.moduleId === mod.id)
-                    .sort((a, b) => a.order - b.order);
-
-                  return (
-                    <div
-                      key={mod.id}
-                      className="rounded-[14px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden"
-                    >
-                      <button
-                        type="button"
-                        onClick={() => setOpenModuleId(isOpen ? null : mod.id)}
-                        className="w-full min-h-[50px] px-5 py-3.5 flex items-center justify-between text-left text-sm sm:text-base font-semibold text-slate-900 dark:text-white transition-colors"
-                      >
-                        <span className="font-heading">{mod.title}</span>
-                        <ChevronDown
-                          className={`w-5 h-5 text-slate-400 transition-transform ${
-                            isOpen ? 'rotate-180 text-[#FF7A1A]' : ''
-                          }`}
-                        />
-                      </button>
-
-                      {isOpen && (
-                        <div className="px-5 pb-4 pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-2">
-                          {modLessons.length === 0 ? (
-                            <div className="py-2 text-xs text-slate-400">
-                              Belum ada data
-                            </div>
-                          ) : (
-                            modLessons.map((les) => (
-                              <div
-                                key={les.id}
-                                className="flex items-center justify-between py-2 text-sm text-slate-700 dark:text-slate-300"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <BookOpen className="w-4 h-4 text-[#1E4FA8]" />
-                                  <span>{les.title}</span>
-                                </div>
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

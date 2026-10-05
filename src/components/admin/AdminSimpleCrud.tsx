@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { AppExample, Testimonial, FaqItem, Announcement, ContactMessage } from '../../types';
+import { AppExample, Testimonial, FaqItem, Announcement, ContactMessage, FileSource } from '../../types';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { ImageUploader } from '../common/ImageUploader';
 import { generateId, formatDate } from '../../utils/crypto';
 import { Plus, Edit2, Trash2, Eye, EyeOff, Search, Star, MessageSquare, LayoutGrid } from 'lucide-react';
 
@@ -50,10 +51,11 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
 
   // Generic form fields
   const [field1, setField1] = useState(''); // name / question / title
-  const [field2, setField2] = useState(''); // category / role / answer / content
+  const [field2, setField2] = useState(''); // role / answer / content
   const [field3, setField3] = useState(''); // description / avatar / date
   const [field4, setField4] = useState(''); // imageUrl / rating (number) / appUrl
   const [field5, setField5] = useState(''); // appUrl
+  const [imgSource, setImgSource] = useState<FileSource>('tautan');
   const [isVisible, setIsVisible] = useState(true);
 
   const getTitle = () => {
@@ -71,7 +73,8 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
     setField1('');
     setField2('');
     setField3('');
-    setField4(type === 'testimonials' ? '5' : '');
+    setImgSource('tautan');
+    setField4(type === 'testimonials' ? '5' : 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80');
     setField5('');
     setIsVisible(true);
     setIsEditing(true);
@@ -82,10 +85,11 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
     setIsVisible(item.isVisible !== false);
     if (type === 'examples') {
       setField1(item.name);
-      setField2(item.category);
-      setField3(item.description);
-      setField4(item.imageUrl);
-      setField5(item.appUrl);
+      setField2('');
+      setField3(item.description || '');
+      setImgSource(item.imageSource || 'tautan');
+      setField4(item.imageUrl || '');
+      setField5(item.appUrl || '');
     } else if (type === 'testimonials') {
       setField1(item.name);
       setField2(item.role);
@@ -114,11 +118,12 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
       onSaveExample({
         id: editingId || generateId('app'),
         name: field1.trim(),
-        category: field2.trim() || 'Umum',
+        category: '',
         description: field3.trim(),
+        imageSource: imgSource,
         imageUrl: field4.trim() || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
         appUrl: field5.trim() || 'https://gubersmart.com',
-        order: appExamples.length + 1,
+        order: editingId ? (appExamples.find((a) => a.id === editingId)?.order || 1) : appExamples.length + 1,
         isVisible,
       });
     } else if (type === 'testimonials') {
@@ -206,42 +211,39 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
 
           {type === 'examples' && (
             <>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kategori</label>
-                  <input
-                    type="text"
-                    value={field2}
-                    onChange={(e) => setField2(e.target.value)}
-                    className="w-full h-11 px-3.5 text-sm bg-slate-50 border rounded-[14px]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Tautan Aplikasi</label>
-                  <input
-                    type="url"
-                    value={field5}
-                    onChange={(e) => setField5(e.target.value)}
-                    className="w-full h-11 px-3.5 text-sm bg-slate-50 border rounded-[14px]"
-                  />
-                </div>
-              </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">URL Gambar</label>
-                <input
-                  type="url"
+                <ImageUploader
+                  label="Gambar / Thumbnail Aplikasi"
+                  source={imgSource}
                   value={field4}
-                  onChange={(e) => setField4(e.target.value)}
-                  className="w-full h-11 px-3.5 text-sm bg-slate-50 border rounded-[14px]"
+                  onChange={(src, val) => {
+                    setImgSource(src);
+                    setField4(val);
+                  }}
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">Deskripsi</label>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Tautan Aplikasi (URL)
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://..."
+                  value={field5}
+                  onChange={(e) => setField5(e.target.value)}
+                  className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Deskripsi Singkat
+                </label>
                 <textarea
                   rows={3}
+                  placeholder="Jelaskan fitur dan fungsi aplikasi..."
                   value={field3}
                   onChange={(e) => setField3(e.target.value)}
-                  className="w-full p-3 text-sm bg-slate-50 border rounded-[14px] resize-none"
+                  className="w-full p-3 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] resize-none"
                 />
               </div>
             </>
@@ -423,7 +425,6 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
                   </div>
                   <div>
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white">{item.name}</h4>
-                    <span className="text-xs text-slate-400">{item.category}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

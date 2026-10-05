@@ -629,9 +629,9 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
       {/* Preview Section */}
       {previewUrl && previewUrl.trim() !== '' && (
-        <div className="pt-2 flex items-start gap-4">
-          <div className="relative group">
-            <div className="w-28 h-20 rounded-[12px] overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-xs">
+        <div className="pt-2">
+          <div className="relative inline-block group">
+            <div className="w-32 h-20 rounded-[12px] overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-xs">
               {isLoading ? (
                 <div className="w-full h-full bg-slate-900/60 flex flex-col items-center justify-center text-white p-2">
                   <Loader2 className="w-5 h-5 animate-spin text-[#FF7A1A]" />
@@ -660,25 +660,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
-          </div>
-
-          <div className="flex-1 text-xs space-y-1 pt-1">
-            <div className="flex items-center gap-1.5 font-semibold text-slate-700 dark:text-slate-200">
-              {driveSaved ? (
-                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  Tersimpan di Google Drive
-                </span>
-              ) : (
-                <span className="text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                  <Cloud className="w-3.5 h-3.5 text-[#1E4FA8]" />
-                  Preview Siap Disimpan
-                </span>
-              )}
-            </div>
-            <p className="text-slate-500 dark:text-slate-400 text-[11px] line-clamp-2 break-all">
-              {value && value.startsWith('data:') ? 'Tersedia sebagai data gambar lokal' : value}
-            </p>
           </div>
         </div>
       )}

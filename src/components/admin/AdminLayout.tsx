@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Role, Course, CourseModule, Lesson, FileDownload, Quiz, Member, UserProgress, AppExample, Testimonial, FaqItem, Announcement, ContactMessage, ActivityLog, CMSSettings } from '../../types';
 import { AdminDashboard } from './AdminDashboard';
 import { AdminClasses } from './AdminClasses';
@@ -32,6 +32,8 @@ import {
   Lock,
   Menu,
   X,
+  Shield,
+  ChevronRight,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -88,10 +90,82 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = (props) => {
   const { role, cms, onToast } = props;
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Read initial tab from URL hash / localStorage so refresh stays on the exact admin tab
+  const getInitialTab = () => {
+    try {
+      const hash = window.location.hash;
+      if (hash.includes('tab=')) {
+        const tabMatch = hash.match(/tab=([^&]+)/);
+        if (tabMatch && tabMatch[1]) return tabMatch[1];
+      }
+      const saved = localStorage.getItem('guber_admin_tab');
+      if (saved) return saved;
+    } catch {
+      // ignore
+    }
+    return 'dashboard';
+  };
+
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const sidebarDrawerRef = useRef<HTMLDivElement>(null);
 
   const isSuperadmin = role === 'Superadmin';
+
+  // Sync activeTab to localStorage & URL hash
+  const handleSelectTab = (tabId: string) => {
+    setActiveTab(tabId);
+    setMobileSidebarOpen(false);
+    try {
+      localStorage.setItem('guber_admin_tab', tabId);
+      let newHash = '#/admin?tab=' + tabId;
+      if (window.location.hash !== newHash) {
+        window.history.replaceState(null, '', newHash);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  // Close mobile sidebar on Escape key or outside click
+  useEffect(() => {
+    if (mobileSidebarOpen) {
+      document.body.style.overflow = 'hidden';
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setMobileSidebarOpen(false);
+        }
+      };
+
+      const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+        if (
+          sidebarDrawerRef.current &&
+          !sidebarDrawerRef.current.contains(e.target as Node)
+        ) {
+          setMobileSidebarOpen(false);
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('mousedown', handlePointerDown);
+      document.addEventListener('touchstart', handlePointerDown);
+
+      return () => {
+        document.body.style.overflow = '';
+        window.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('mousedown', handlePointerDown);
+        document.removeEventListener('touchstart', handlePointerDown);
+      };
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileSidebarOpen]);
 
   const menuItems = [
     { id: 'dashboard', label: 'Ringkasan', icon: LayoutDashboard },
@@ -117,57 +191,70 @@ export const AdminLayout: React.FC<AdminLayoutProps> = (props) => {
       : []),
   ];
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-      {/* Mobile Menu Dropdown / Bar */}
-      <div className="lg:hidden mb-6 flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-[14px] border border-slate-200 dark:border-slate-800 shadow-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-slate-400">Menu Admin:</span>
-          <span className="text-sm font-bold text-[#0B2A5B] dark:text-white">
-            {menuItems.find((m) => m.id === activeTab)?.label}
-          </span>
-        </div>
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="h-9 px-3 text-xs font-semibold rounded-[8px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200"
-        >
-          {mobileMenuOpen ? 'Tutup' : 'Ganti Menu'}
-        </button>
-      </div>
+  const currentMenuLabel = menuItems.find((m) => m.id === activeTab)?.label || 'Ringkasan';
 
-      {/* Mobile Drawer if open */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden mb-6 p-3 bg-white dark:bg-slate-900 rounded-[14px] border border-slate-200 dark:border-slate-800 shadow-md grid grid-cols-2 gap-1.5 animate-in fade-in">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`p-2.5 rounded-[10px] text-xs font-semibold flex items-center gap-2 text-left transition-colors ${
-                  isActive
-                    ? 'bg-[#0B2A5B] text-white'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                <span className="truncate">{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10 relative">
+      {/* 1. Mobile Floating Hamburger Button (Kiri Tengah Layar HP - Ukuran 120px x 30px) */}
+      {!mobileSidebarOpen && (
+        <button
+          type="button"
+          onClick={() => setMobileSidebarOpen(true)}
+          aria-label="Buka Menu Panel Admin"
+          className="fixed left-0 top-1/2 -translate-y-1/2 z-40 lg:hidden w-[30px] h-[120px] bg-[#0B2A5B]/95 hover:bg-[#0B2A5B] text-white rounded-r-[14px] shadow-2xl border-y border-r border-slate-600/50 backdrop-blur-md flex flex-col items-center justify-center gap-1.5 transition-all active:scale-95 group focus:outline-none"
+        >
+          <Menu className="w-4 h-4 text-[#FF7A1A] group-hover:scale-110 transition-transform" />
+          <span className="text-[9px] font-extrabold tracking-widest text-slate-200 [writing-mode:vertical-lr] rotate-180 uppercase select-none">
+            MENU
+          </span>
+        </button>
       )}
 
-      {/* Desktop Grid Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-        {/* Desktop Sidebar (Col 1) */}
-        <aside className="hidden lg:block lg:col-span-1 bg-white dark:bg-slate-900 rounded-[14px] p-3 border border-slate-100 dark:border-slate-800 shadow-xs space-y-1 sticky top-24">
-          <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Menu Dasbor
+      {/* 2. Mobile Backdrop Overlay */}
+      {mobileSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs lg:hidden transition-opacity duration-300 animate-in fade-in"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* 3. Mobile Off-Canvas Sidebar Drawer */}
+      <aside
+        ref={sidebarDrawerRef}
+        className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-80 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col transition-transform duration-300 ease-out lg:hidden ${
+          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+        aria-label="Sidebar Menu Admin Mobile"
+      >
+        {/* Mobile Sidebar Header */}
+        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-[10px] bg-[#0B2A5B] flex items-center justify-center text-white shrink-0">
+              <Shield className="w-4 h-4 text-[#FF7A1A]" />
+            </div>
+            <div>
+              <h3 className="font-heading font-bold text-sm text-[#0B2A5B] dark:text-white leading-tight">
+                Panel {role}
+              </h3>
+              <p className="text-[10px] text-slate-400">
+                Pilih menu manajemen
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMobileSidebarOpen(false)}
+            className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center justify-center transition-colors"
+            aria-label="Tutup menu"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Mobile Menu Items List */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-1">
+          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 py-1">
+            Menu Manajemen Admin
           </div>
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -175,14 +262,54 @@ export const AdminLayout: React.FC<AdminLayoutProps> = (props) => {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                type="button"
+                onClick={() => handleSelectTab(item.id)}
+                className={`w-full min-h-[42px] px-3.5 rounded-[12px] text-xs font-semibold flex items-center justify-between text-left transition-all ${
+                  isActive
+                    ? 'bg-[#0B2A5B] text-white shadow-xs font-bold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#FF7A1A]' : 'text-slate-400'}`} />
+                  <span className="truncate">{item.label}</span>
+                </div>
+                <ChevronRight className={`w-3.5 h-3.5 ${isActive ? 'text-white/60' : 'text-slate-300 dark:text-slate-600'}`} />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Mobile Sidebar Footer */}
+        <div className="p-3 border-t border-slate-100 dark:border-slate-800 text-[10px] text-center text-slate-400">
+          Sedang aktif: <span className="font-bold text-[#0B2A5B] dark:text-white">{currentMenuLabel}</span>
+        </div>
+      </aside>
+
+      {/* 4. Desktop Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+        {/* Desktop Sidebar (Col 1) */}
+        <aside className="hidden lg:block lg:col-span-1 bg-white dark:bg-slate-900 rounded-[14px] p-3 border border-slate-100 dark:border-slate-800 shadow-xs space-y-1 sticky top-24">
+          <div className="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+            <span>Menu Dasbor</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono">
+              {role}
+            </span>
+          </div>
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleSelectTab(item.id)}
                 className={`w-full min-h-[44px] px-3.5 rounded-[12px] text-sm font-semibold flex items-center gap-3 text-left transition-all ${
                   isActive
                     ? 'bg-[#0B2A5B] text-white shadow-xs font-bold'
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
-                <Icon className="w-4 h-4 shrink-0" />
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#FF7A1A]' : ''}`} />
                 <span className="truncate">{item.label}</span>
               </button>
             );
@@ -198,7 +325,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = (props) => {
               members={props.members}
               contacts={props.contacts}
               logs={props.logs}
-              onNavigateTab={(tab) => setActiveTab(tab)}
+              onNavigateTab={(tab) => handleSelectTab(tab)}
             />
           )}
 

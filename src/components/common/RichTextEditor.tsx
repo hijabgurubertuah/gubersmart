@@ -38,8 +38,11 @@ import {
   X,
   Plus,
   Trash2,
+  Loader2,
 } from 'lucide-react';
-import { sanitizeHtml, calculateContentStats } from '../../utils/sanitize';
+import { sanitizeHtml } from '../../utils/sanitize';
+import { compressImageFile, uploadFileToDrive } from '../../services/appsScript';
+import { store } from '../../services/store';
 
 interface RichTextEditorProps {
   value: string;
@@ -73,6 +76,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [imageUrl, setImageUrl] = useState('');
   const [imageCaption, setImageCaption] = useState('');
   const [imageAlign, setImageAlign] = useState<'left' | 'center' | 'full'>('center');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [videoInput, setVideoInput] = useState('');
@@ -198,16 +203,41 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     handleContentChange();
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      setImageUrl(base64);
-    };
-    reader.readAsDataURL(file);
+    setIsUploadingImage(true);
+    setImageUploadError(null);
+
+    try {
+      const compressed = await compressImageFile(file, 1600, 0.85);
+      const syncConfig = store.getCMS().sync;
+
+      if (syncConfig?.webAppUrl && syncConfig.webAppUrl.trim().startsWith('https://script.google.com')) {
+        const res = await uploadFileToDrive({
+          file,
+          compressedDataUrl: compressed.dataUrl,
+          webAppUrl: syncConfig.webAppUrl,
+          driveFolderId: syncConfig.driveFolderId,
+        });
+
+        if (res.status === 'success' && (res.directUrl || res.viewUrl)) {
+          setImageUrl(res.directUrl || res.viewUrl || '');
+          if (res.folderId && (!syncConfig.driveFolderId || syncConfig.driveFolderId !== res.folderId)) {
+            store.updateSyncConfig({ driveFolderId: res.folderId });
+          }
+          return;
+        }
+      }
+
+      // Fallback to compressed dataUrl if drive is not configured
+      setImageUrl(compressed.dataUrl);
+    } catch (err: any) {
+      setImageUploadError(err.message || 'Gagal memproses gambar');
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   const handleInsertVideo = (e: React.FormEvent) => {
@@ -293,8 +323,6 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     handleContentChange();
   };
 
-  const stats = calculateContentStats(htmlContent);
-
   const colors = [
     '#000000', '#0F172A', '#0B2A5B', '#1E4FA8', '#2563EB', '#0D9488',
     '#16A34A', '#EAB308', '#FF7A1A', '#DC2626', '#9333EA', '#64748B',
@@ -319,6 +347,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <div className="flex items-center gap-0.5 pr-1 border-r border-slate-200 dark:border-slate-700">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('undo')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             title="Undo (Ctrl+Z)"
@@ -327,6 +356,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('redo')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             title="Redo (Ctrl+Y)"
@@ -357,6 +387,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <div className="flex items-center gap-0.5 px-1 border-r border-slate-200 dark:border-slate-700">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('bold')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold transition-colors"
             title="Tebal (Bold)"
@@ -365,6 +396,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('italic')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 italic transition-colors"
             title="Miring (Italic)"
@@ -373,6 +405,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('underline')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 underline transition-colors"
             title="Garis Bawah (Underline)"
@@ -381,6 +414,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('strikeThrough')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 line-through transition-colors"
             title="Coret (Strikethrough)"
@@ -389,6 +423,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('subscript')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs transition-colors"
             title="Subscript"
@@ -397,6 +432,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('superscript')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs transition-colors"
             title="Superscript"
@@ -409,6 +445,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <div className="flex items-center gap-0.5 px-1 border-r border-slate-200 dark:border-slate-700">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('justifyLeft')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             title="Rata Kiri"
@@ -417,6 +454,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('justifyCenter')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             title="Rata Tengah"
@@ -425,6 +463,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('justifyRight')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             title="Rata Kanan"
@@ -433,6 +472,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('justifyFull')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             title="Rata Kanan Kiri (Justify)"
@@ -445,6 +485,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <div className="flex items-center gap-0.5 px-1 border-r border-slate-200 dark:border-slate-700">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('insertUnorderedList')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             title="Daftar Simbol (Bullet List)"
@@ -453,6 +494,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('insertOrderedList')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             title="Daftar Angka (Numbered List)"
@@ -461,6 +503,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           </button>
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleInsertTask}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             title="Checklist / Task List"
@@ -475,6 +518,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <div className="relative">
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 saveSelection();
                 setShowColorPicker(!showColorPicker);
@@ -491,6 +535,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   <button
                     key={c}
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
                       restoreSelection();
                       exec('foreColor', c);
@@ -508,6 +553,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
           <div className="relative">
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 saveSelection();
                 setShowBgColorPicker(!showBgColorPicker);
@@ -524,6 +570,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                   <button
                     key={c}
                     type="button"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => {
                       restoreSelection();
                       exec('hiliteColor', c);
@@ -598,6 +645,7 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <div className="flex items-center gap-0.5 pl-1 ml-auto">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => exec('removeFormat')}
             className="w-8 h-8 rounded-[8px] flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
             title="Hapus Pemformatan"
@@ -645,25 +693,13 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
             contentEditable
             onInput={handleContentChange}
             onBlur={handleContentChange}
+            onKeyUp={saveSelection}
+            onMouseUp={saveSelection}
             className="w-full flex-1 p-5 focus:outline-none text-slate-800 dark:text-slate-100 text-sm sm:text-base leading-relaxed overflow-y-auto prose dark:prose-invert max-w-none"
             style={{ minHeight }}
             data-placeholder={placeholder}
           />
         )}
-      </div>
-
-      {/* 3. BOTTOM STATUS BAR & STATS */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700/80 rounded-b-[14px] text-xs text-slate-500 dark:text-slate-400">
-        <div className="flex items-center gap-4 font-medium">
-          <span>{stats.wordCount} Kata</span>
-          <span>{stats.charCount} Karakter</span>
-          <span>~{stats.readTimeMinutes} menit baca</span>
-        </div>
-
-        <div className="flex items-center gap-2 text-[11px]">
-          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span>Siap disimpan (WYSIWYG Modern)</span>
-        </div>
       </div>
 
       {/* ---------------- MODALS ---------------- */}
@@ -772,12 +808,25 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
                 />
                 <button
                   type="button"
+                  disabled={isUploadingImage}
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-10 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-[10px] flex items-center justify-center gap-2 transition-colors"
+                  className="w-full h-10 px-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-[10px] flex items-center justify-center gap-2 transition-colors disabled:opacity-60"
                 >
-                  <Upload className="w-4 h-4" />
-                  Pilih File Gambar
+                  {isUploadingImage ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-[#FF7A1A]" />
+                      <span>Mengunggah ke Drive...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      <span>Pilih File Gambar</span>
+                    </>
+                  )}
                 </button>
+                {imageUploadError && (
+                  <p className="text-xs text-rose-500 mt-1">{imageUploadError}</p>
+                )}
               </div>
 
               <div>

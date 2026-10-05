@@ -198,8 +198,9 @@ export interface UserProgress {
 export interface AppExample {
   id: string;
   name: string;
-  category: string;
+  category?: string;
   description: string;
+  imageSource?: FileSource;
   imageUrl: string;
   appUrl: string;
   order: number;

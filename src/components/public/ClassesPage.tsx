@@ -89,19 +89,23 @@ export const ClassesPage: React.FC<ClassesPageProps> = ({
 
               <div className="p-5 pt-0 border-t border-slate-100 dark:border-slate-800 mt-4 flex items-center justify-between gap-3">
                 <div>
-                  <span className="text-lg font-bold text-[#0B2A5B] dark:text-white">
+                  {course.originalPrice && course.originalPrice > course.price ? (
+                    <div className="text-xs text-slate-400 line-through">
+                      {formatRupiah(course.originalPrice)}
+                    </div>
+                  ) : null}
+                  <span className="text-lg font-bold text-[#0B2A5B] dark:text-white font-heading">
                     {formatRupiah(course.price)}
                   </span>
                 </div>
                 <div>
-                  <a
-                    href={course.lynkUrl || defaultLynkUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="h-10 px-6 text-xs font-bold tracking-wider text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center justify-center transition-colors shadow-xs active:scale-[0.98]"
+                  <button
+                    type="button"
+                    onClick={() => onOpenClassDetail(course.id)}
+                    className="h-10 px-6 text-xs font-bold tracking-wider text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] rounded-[12px] flex items-center justify-center transition-colors shadow-xs active:scale-[0.98]"
                   >
-                    BELI
-                  </a>
+                    LIHAT
+                  </button>
                 </div>
               </div>
             </div>

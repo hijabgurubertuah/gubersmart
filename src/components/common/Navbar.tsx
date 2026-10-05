@@ -25,6 +25,7 @@ interface NavbarProps {
   onOpenLogin: () => void;
   onLogout: () => void;
   onInstall: () => void;
+  onOpenSidebar?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -40,47 +41,39 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const toggleButtonRef = useRef<HTMLButtonElement>(null);
+  const toggleBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Lock body scroll and listen for outside clicks / Escape when drawer is open
+  // Close on click outside & Escape
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-
       const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          setIsOpen(false);
-        }
+        if (e.key === 'Escape') setIsOpen(false);
       };
-
-      const handlePointerDownOutside = (e: MouseEvent | TouchEvent) => {
-        const target = e.target as Node;
+      const handlePointerDown = (e: MouseEvent | TouchEvent) => {
         if (
           drawerRef.current &&
-          !drawerRef.current.contains(target) &&
-          toggleButtonRef.current &&
-          !toggleButtonRef.current.contains(target)
+          !drawerRef.current.contains(e.target as Node) &&
+          toggleBtnRef.current &&
+          !toggleBtnRef.current.contains(e.target as Node)
         ) {
           setIsOpen(false);
         }
       };
 
       window.addEventListener('keydown', handleKeyDown);
-      document.addEventListener('mousedown', handlePointerDownOutside);
-      document.addEventListener('touchstart', handlePointerDownOutside);
+      document.addEventListener('mousedown', handlePointerDown);
+      document.addEventListener('touchstart', handlePointerDown);
 
       return () => {
         document.body.style.overflow = '';
         window.removeEventListener('keydown', handleKeyDown);
-        document.removeEventListener('mousedown', handlePointerDownOutside);
-        document.removeEventListener('touchstart', handlePointerDownOutside);
+        document.removeEventListener('mousedown', handlePointerDown);
+        document.removeEventListener('touchstart', handlePointerDown);
       };
     } else {
       document.body.style.overflow = '';
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
   }, [isOpen]);
 
   const handleNavClick = (path: string) => {
@@ -117,14 +110,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-colors">
       <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        {/* Left Side: Hamburger (Mobile) + Brand / Logo */}
+        {/* Left Side: Mobile Hamburger + Brand / Logo */}
         <div className="flex items-center gap-2">
-          {/* Mobile Hamburger Button */}
           <button
-            ref={toggleButtonRef}
+            ref={toggleBtnRef}
+            type="button"
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden w-11 h-11 -ml-1.5 flex items-center justify-center rounded-[12px] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
-            aria-label={isOpen ? 'Tutup menu' : 'Buka menu'}
+            aria-label={isOpen ? 'Tutup menu navigasi' : 'Buka menu navigasi'}
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -241,7 +234,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Unified Scrollable list */}
         <div className="flex-1 overflow-y-auto px-4 py-5 space-y-2 pb-12">
           {navItems.map((item) => {
             const isActive = currentPath === item.path;
@@ -274,7 +266,6 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          {/* Integrated Masuk / Dasbor / Keluar item directly in the navigation list */}
           <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
             {role === 'Publik' ? (
               <button
