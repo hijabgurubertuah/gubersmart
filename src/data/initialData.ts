@@ -74,7 +74,7 @@ export const INITIAL_CMS_SETTINGS: CMSSettings = {
     { id: 'sec_examples', title: 'Sorotan Aplikasi', description: 'Contoh nyata hasil karya', isVisible: true, order: 5 },
     { id: 'sec_testimonials', title: 'Testimoni', description: 'Ulasan asli para member', isVisible: true, order: 6 },
     { id: 'sec_faq', title: 'Tanya Jawab', description: 'Pertanyaan sering diajukan', isVisible: true, order: 7 },
-    { id: 'sec_cta', title: 'Ajakan Beli', description: 'Bagian penutup ajakan bergabung', isVisible: true, order: 8 },
+    { id: 'sec_cta', title: 'Apakah Kamu Tertarik?', description: 'Bagian penutup ajakan bergabung', isVisible: true, order: 8 },
   ],
   pages: [
     {

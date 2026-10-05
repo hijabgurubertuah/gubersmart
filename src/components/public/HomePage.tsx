@@ -2,12 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CMSSettings, Course, AppExample, Testimonial, FaqItem } from '../../types';
 import { formatRupiah } from '../../utils/crypto';
 import {
-  Smartphone,
-  Layers,
   ArrowRight,
-  ChevronDown,
-  ShieldCheck,
-  Zap,
   BookOpen,
   ChevronLeft,
   ChevronRight,
@@ -31,12 +26,10 @@ export const HomePage: React.FC<HomePageProps> = ({
   courses,
   appExamples,
   testimonials,
-  faqs,
+  faqs: _faqs,
   onNavigate,
   onOpenClassDetail,
 }) => {
-  const [openFaqId, setOpenFaqId] = useState<string | null>(faqs[0]?.id || null);
-
   // Background Carousel Slides
   const defaultHeroSlides = [
     'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1600&auto=format&fit=crop',
@@ -74,11 +67,8 @@ export const HomePage: React.FC<HomePageProps> = ({
 
   const secHero = getSection('sec_hero');
   const secFeatured = getSection('sec_featured');
-  const secBenefits = getSection('sec_benefits');
-  const secHow = getSection('sec_how');
   const secExamples = getSection('sec_examples');
   const secTesti = getSection('sec_testimonials');
-  const secFaq = getSection('sec_faq');
   const secCta = getSection('sec_cta');
 
   const visibleCourses = courses
@@ -91,9 +81,6 @@ export const HomePage: React.FC<HomePageProps> = ({
 
   const visibleTestimonials = testimonials
     .filter((t) => t.isVisible);
-
-  const visibleFaqs = faqs
-    .filter((f) => f.isVisible);
 
   return (
     <div className="w-full space-y-16 sm:space-y-24 pb-20">
@@ -259,117 +246,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         </section>
       )}
 
-      {/* 3. Benefits Section */}
-      {secBenefits?.isVisible && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-              {secBenefits.title}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
-                <Zap className="w-6 h-6 text-[#FF7A1A]" />
-              </div>
-              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Instruksi Bahasa Manusia
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Cukup deskripsikan aplikasi yang Anda inginkan, teknologi AI akan memandu perwujudannya selangkah demi selangkah.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
-                <Layers className="w-6 h-6 text-[#FF7A1A]" />
-              </div>
-              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Pustaka Skill Claude
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Unduh berkas keahlian siap pasang untuk mempercepat pembuatan modul absensi, toko online, dan portal web.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
-                <Smartphone className="w-6 h-6 text-[#FF7A1A]" />
-              </div>
-              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Sempurna di Layar HP
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Seluruh aplikasi hasil latihan responsif dan nyaman digunakan dengan satu tangan di layar ponsel.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-[14px] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 rounded-[12px] bg-blue-50 dark:bg-blue-950 flex items-center justify-center text-[#1E4FA8] dark:text-blue-400 mb-4">
-                <ShieldCheck className="w-6 h-6 text-[#FF7A1A]" />
-              </div>
-              <h3 className="text-base font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Sertifikat Kelulusan Resmi
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Dapatkan sertifikat digital dengan nomor verifikasi unik setelah menuntaskan seluruh pelajaran dan kuis.
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 4. How It Works Section */}
-      {secHow?.isVisible && (
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-              {secHow.title}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-slate-900 rounded-[14px] border border-slate-100 dark:border-slate-800 shadow-sm">
-              <div className="w-14 h-14 rounded-full bg-[#0B2A5B] text-white font-heading font-bold text-xl flex items-center justify-center mb-5">
-                1
-              </div>
-              <h3 className="text-lg font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Beli Kelas di Lynk.id
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Pilih topik kelas yang Anda butuhkan dan selesaikan pembelian secara aman di halaman Lynk.id.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-slate-900 rounded-[14px] border border-slate-100 dark:border-slate-800 shadow-sm">
-              <div className="w-14 h-14 rounded-full bg-[#1E4FA8] text-white font-heading font-bold text-xl flex items-center justify-center mb-5">
-                2
-              </div>
-              <h3 className="text-lg font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Aktivasi Kode Akses
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Gunakan kode akses pribadi dari admin untuk masuk ke ruang member portal belajar Guber Smart.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center text-center p-6 bg-white dark:bg-slate-900 rounded-[14px] border border-slate-100 dark:border-slate-800 shadow-sm">
-              <div className="w-14 h-14 rounded-full bg-[#FF7A1A] text-white font-heading font-bold text-xl flex items-center justify-center mb-5">
-                3
-              </div>
-              <h3 className="text-lg font-bold font-heading text-slate-900 dark:text-white mb-2">
-                Praktik dan Terbitkan
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                Ikuti video, centang panduan bertahap, unduh skill pendukung, dan luncurkan aplikasi web Anda.
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 5. App Examples Highlights */}
+      {/* 3. App Examples Highlights */}
       {secExamples?.isVisible && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 sm:mb-12 gap-4">
@@ -432,7 +309,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         </section>
       )}
 
-      {/* 6. Testimonials */}
+      {/* 4. Testimonials */}
       {secTesti?.isVisible && visibleTestimonials.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
@@ -485,69 +362,21 @@ export const HomePage: React.FC<HomePageProps> = ({
         </section>
       )}
 
-      {/* 7. FAQ Section */}
-      {secFaq?.isVisible && visibleFaqs.length > 0 && (
-        <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-              {secFaq.title}
-            </h2>
-          </div>
-
-          <div className="space-y-3">
-            {visibleFaqs.map((faq) => {
-              const isOpen = openFaqId === faq.id;
-              return (
-                <div
-                  key={faq.id}
-                  className="rounded-[14px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden transition-colors"
-                >
-                  <button
-                    onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
-                    className="w-full min-h-[52px] px-5 py-4 flex items-center justify-between text-left text-base font-semibold text-slate-900 dark:text-white transition-colors"
-                  >
-                    <span>{faq.question}</span>
-                    <ChevronDown
-                      className={`w-5 h-5 text-slate-400 shrink-0 transition-transform duration-200 ${
-                        isOpen ? 'rotate-180 text-[#FF7A1A]' : ''
-                      }`}
-                    />
-                  </button>
-                  {isOpen && (
-                    <div className="px-5 pb-5 text-sm text-slate-600 dark:text-slate-300 leading-relaxed border-t border-slate-100 dark:border-slate-800/60 pt-3">
-                      {faq.answer}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* 8. Call to Action Banner */}
+      {/* 5. Call to Action Banner */}
       {secCta?.isVisible && (
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="rounded-[18px] bg-gradient-to-r from-[#0B2A5B] to-[#1E4FA8] p-8 sm:p-14 text-white text-center space-y-6 shadow-xl relative overflow-hidden">
             <h2 className="text-2xl sm:text-4xl font-bold font-heading max-w-2xl mx-auto leading-tight">
-              Mulai Bangun Aplikasi Web Anda Hari Ini
+              {secCta.title && secCta.title !== 'Ajakan Beli' ? secCta.title : 'Apakah Kamu Tertarik?'}
             </h2>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+            <div className="flex items-center justify-center pt-2">
               <button
+                type="button"
                 onClick={() => onNavigate('/kelas')}
-                className="w-full sm:w-auto min-h-[48px] px-8 py-3 text-base font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[14px] shadow-lg transition-all active:scale-[0.98]"
+                className="w-full sm:w-auto min-h-[48px] px-8 py-3 text-base font-bold tracking-wide text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[14px] shadow-lg transition-all active:scale-[0.98]"
               >
-                Pilih Kelas
+                SAYA TERTARIK
               </button>
-              <a
-                href={cms.identity.lynkUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto min-h-[48px] px-8 py-3 text-base font-semibold text-white bg-white/15 hover:bg-white/25 rounded-[14px] border border-white/20 transition-colors flex items-center justify-center gap-2"
-              >
-                Beli di Lynk.id
-                <ExternalLink className="w-4 h-4" />
-              </a>
             </div>
           </div>
         </section>
