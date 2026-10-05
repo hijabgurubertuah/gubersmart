@@ -98,10 +98,9 @@ export const ClassesPage: React.FC<ClassesPageProps> = ({
                     href={course.lynkUrl || defaultLynkUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="h-10 px-5 text-xs font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center gap-1.5 transition-colors shadow-xs active:scale-[0.98]"
+                    className="h-10 px-6 text-xs font-bold tracking-wider text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center justify-center transition-colors shadow-xs active:scale-[0.98]"
                   >
-                    Beli
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    BELI
                   </a>
                 </div>
               </div>

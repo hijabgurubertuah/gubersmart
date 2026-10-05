@@ -60,10 +60,9 @@ export const Footer: React.FC<FooterProps> = ({ cms, onNavigate }) => {
               Kontak
             </h4>
             <ul className="space-y-2 text-sm text-slate-300">
-              <li>{footer.address}</li>
-              <li>{footer.phone}</li>
-              <li>{footer.email}</li>
-              <li>{footer.hours}</li>
+              {footer.address && <li>{footer.address}</li>}
+              {footer.email && <li>{footer.email}</li>}
+              {footer.hours && <li>{footer.hours}</li>}
             </ul>
           </div>
 

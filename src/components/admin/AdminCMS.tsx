@@ -147,7 +147,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                     onClick={() =>
                       setFormData({
                         ...formData,
-                        identity: { ...formData.identity, logoUrl: '' },
+                        identity: { ...formData.identity, logoUrl: '', faviconUrl: '/favicon.svg' },
                       })
                     }
                     className="text-xs text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 font-medium transition-colors"
@@ -171,7 +171,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                   onChange={(_source, val) =>
                     setFormData({
                       ...formData,
-                      identity: { ...formData.identity, logoUrl: val },
+                      identity: { ...formData.identity, logoUrl: val, faviconUrl: val },
                     })
                   }
                 />

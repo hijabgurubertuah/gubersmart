@@ -3,8 +3,6 @@ import { Course, CourseModule, Lesson } from '../../types';
 import { formatRupiah } from '../../utils/crypto';
 import {
   ArrowLeft,
-  ExternalLink,
-  Clock,
   BookOpen,
   CheckCircle,
   ChevronDown,
@@ -53,17 +51,6 @@ export const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
           <p className="text-base text-slate-600 dark:text-slate-300 leading-relaxed">
             {course.summary}
           </p>
-
-          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400 pt-1">
-            <div className="flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-[#FF7A1A]" />
-              <span>{course.duration}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <BookOpen className="w-4 h-4 text-[#1E4FA8]" />
-              <span>{courseModules.length} Modul</span>
-            </div>
-          </div>
         </div>
 
         {/* Right card (Buy box) */}
@@ -90,10 +77,9 @@ export const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
             href={course.lynkUrl || defaultLynkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full min-h-[48px] px-6 text-base font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[14px] flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+            className="w-full min-h-[48px] px-6 text-sm sm:text-base font-bold tracking-wider text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[14px] flex items-center justify-center shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
           >
-            Beli di Lynk.id
-            <ExternalLink className="w-4 h-4" />
+            AMBIL PROMO SEKARANG
           </a>
         </div>
       </div>

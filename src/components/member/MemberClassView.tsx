@@ -64,10 +64,9 @@ export const MemberClassView: React.FC<MemberClassViewProps> = ({
             href={course.lynkUrl || defaultLynkUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="min-h-[44px] px-6 text-sm font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center gap-2 shadow-md transition-all"
+            className="min-h-[44px] px-6 text-sm font-bold tracking-wider text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center justify-center shadow-md transition-all active:scale-[0.98]"
           >
-            Beli di Lynk.id
-            <ExternalLink className="w-4 h-4" />
+            AMBIL PROMO SEKARANG
           </a>
         </div>
       </div>

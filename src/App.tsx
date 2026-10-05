@@ -63,16 +63,46 @@ export function App() {
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // Apply CMS theme dynamically
+  // Apply CMS theme & dynamic favicon
   useEffect(() => {
-    document.title = cms.identity.appName ? `${cms.identity.appName} - ${cms.identity.tagline}` : 'Guber Smart';
+    document.title = cms.identity.appName ? `${cms.identity.appName}` : 'Guber Smart';
     if (typeof document !== 'undefined') {
       const root = document.documentElement;
       root.style.setProperty('--primary', cms.theme.primaryColor || '#0B2A5B');
       root.style.setProperty('--secondary', cms.theme.secondaryColor || '#1E4FA8');
       root.style.setProperty('--accent', cms.theme.accentColor || '#FF7A1A');
+
+      // Update favicon dynamically to the uploaded logo
+      const faviconTarget = cms.identity.logoUrl && cms.identity.logoUrl.trim() !== ''
+        ? cms.identity.logoUrl.trim()
+        : cms.identity.faviconUrl || '/favicon.svg';
+
+      const iconSelectors = ["link[rel='icon']", "link[rel='shortcut icon']", "link[rel='apple-touch-icon']"];
+      let found = false;
+
+      iconSelectors.forEach((sel) => {
+        const link = document.querySelector<HTMLLinkElement>(sel);
+        if (link) {
+          link.href = faviconTarget;
+          if (faviconTarget.endsWith('.svg')) {
+            link.type = 'image/svg+xml';
+          } else if (faviconTarget.endsWith('.png')) {
+            link.type = 'image/png';
+          } else {
+            link.removeAttribute('type');
+          }
+          found = true;
+        }
+      });
+
+      if (!found) {
+        const newLink = document.createElement('link');
+        newLink.rel = 'icon';
+        newLink.href = faviconTarget;
+        document.head.appendChild(newLink);
+      }
     }
-  }, [cms]);
+  }, [cms.identity.appName, cms.identity.logoUrl, cms.identity.faviconUrl, cms.theme]);
 
   // Navigate handler
   const handleNavigate = (path: string) => {
