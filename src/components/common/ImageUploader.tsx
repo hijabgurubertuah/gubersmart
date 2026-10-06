@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { FileSource } from '../../types';
-import { compressImageFile, uploadFileToDrive, listDriveFiles, DriveFileItem, APPS_SCRIPT_CODE } from '../../services/appsScript';
+import { compressImageFile, uploadFileToDrive, listDriveFiles, DriveFileItem, DriveFolderItem, APPS_SCRIPT_CODE } from '../../services/appsScript';
 import { store } from '../../services/store';
 import {
   Trash2,
@@ -16,6 +16,10 @@ import {
   Check,
   Copy,
   Sparkles,
+  Folder,
+  FolderOpen,
+  ArrowLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface ImageUploaderProps {
@@ -46,6 +50,8 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   // Gallery states
   const [galleryFiles, setGalleryFiles] = useState<DriveFileItem[]>([]);
+  const [galleryFolders, setGalleryFolders] = useState<DriveFolderItem[]>([]);
+  const [folderStack, setFolderStack] = useState<{ id: string; name: string }[]>([]);
   const [isGalleryLoading, setIsGalleryLoading] = useState(false);
   const [galleryError, setGalleryError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -97,14 +103,18 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     return list;
   }, []);
 
-  const loadGallery = async (force = false) => {
+  const loadGallery = async (force = false, targetFolderId?: string) => {
     const syncConfig = store.getCMS().sync;
     if (!syncConfig || !syncConfig.webAppUrl || !syncConfig.webAppUrl.trim().startsWith('https://script.google.com')) {
       setGalleryError('Google Apps Script belum dikonfigurasi di menu Admin > Sinkronisasi.');
       return;
     }
 
-    if (!force && hasLoadedGalleryOnce && galleryFiles.length > 0) {
+    const folderToQuery = targetFolderId !== undefined
+      ? targetFolderId
+      : (folderStack.length > 0 ? folderStack[folderStack.length - 1].id : syncConfig.driveFolderId);
+
+    if (!force && hasLoadedGalleryOnce && galleryFiles.length > 0 && targetFolderId === undefined) {
       return;
     }
 
@@ -114,15 +124,16 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     try {
       const res = await listDriveFiles({
         webAppUrl: syncConfig.webAppUrl,
-        driveFolderId: syncConfig.driveFolderId,
+        driveFolderId: folderToQuery,
         onlyImages: true,
         limit: 100,
       });
 
       if (res.status === 'success') {
         setGalleryFiles(res.files || []);
+        setGalleryFolders(res.folders || []);
         setHasLoadedGalleryOnce(true);
-        if (res.folderId && (!syncConfig.driveFolderId || syncConfig.driveFolderId !== res.folderId)) {
+        if (res.folderId && !folderToQuery && (!syncConfig.driveFolderId || syncConfig.driveFolderId !== res.folderId)) {
           store.updateSyncConfig({
             driveFolderId: res.folderId,
           });
@@ -134,6 +145,34 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       setGalleryError(err.message || 'Gagal terhubung ke Google Apps Script');
     } finally {
       setIsGalleryLoading(false);
+    }
+  };
+
+  const handleOpenSubfolder = (folder: DriveFolderItem) => {
+    const newStack = [...folderStack, { id: folder.folderId, name: folder.name }];
+    setFolderStack(newStack);
+    setSearchQuery('');
+    loadGallery(true, folder.folderId);
+  };
+
+  const handleGoBackFolder = () => {
+    if (folderStack.length === 0) return;
+    const newStack = folderStack.slice(0, folderStack.length - 1);
+    setFolderStack(newStack);
+    setSearchQuery('');
+    const parentFolderId = newStack.length > 0 ? newStack[newStack.length - 1].id : store.getCMS().sync?.driveFolderId;
+    loadGallery(true, parentFolderId);
+  };
+
+  const handleGoToBreadcrumb = (index: number) => {
+    setSearchQuery('');
+    if (index === -1) {
+      setFolderStack([]);
+      loadGallery(true, store.getCMS().sync?.driveFolderId);
+    } else {
+      const newStack = folderStack.slice(0, index + 1);
+      setFolderStack(newStack);
+      loadGallery(true, newStack[newStack.length - 1].id);
     }
   };
 
@@ -244,6 +283,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   };
 
   // Filtered files in gallery
+  const filteredFolders = useMemo(() => {
+    if (!searchQuery.trim()) return galleryFolders;
+    const q = searchQuery.toLowerCase();
+    return galleryFolders.filter((f) => f.name.toLowerCase().includes(q));
+  }, [galleryFolders, searchQuery]);
+
   const filteredFiles = useMemo(() => {
     if (!searchQuery.trim()) return galleryFiles;
     const q = searchQuery.toLowerCase();
@@ -461,13 +506,52 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             </div>
           ) : (
             <>
+              {/* Breadcrumb Trail & Back Button */}
+              <div className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[10px] text-xs">
+                <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none font-medium text-slate-700 dark:text-slate-300">
+                  <button
+                    type="button"
+                    onClick={() => handleGoToBreadcrumb(-1)}
+                    className="hover:text-[#1E4FA8] dark:hover:text-sky-400 font-semibold flex items-center gap-1 shrink-0"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5 text-[#FF7A1A]" />
+                    <span>Utama</span>
+                  </button>
+                  {folderStack.map((f, idx) => (
+                    <React.Fragment key={f.id}>
+                      <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
+                      <button
+                        type="button"
+                        onClick={() => handleGoToBreadcrumb(idx)}
+                        className={`hover:text-[#1E4FA8] dark:hover:text-sky-400 font-semibold truncate max-w-[120px] ${
+                          idx === folderStack.length - 1 ? 'text-[#0B2A5B] dark:text-white font-bold' : ''
+                        }`}
+                      >
+                        {f.name}
+                      </button>
+                    </React.Fragment>
+                  ))}
+                </div>
+
+                {folderStack.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleGoBackFolder}
+                    className="h-7 px-2.5 text-xs font-semibold text-[#0B2A5B] dark:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-[8px] flex items-center gap-1 shrink-0 transition-colors shadow-2xs"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 text-[#FF7A1A]" />
+                    <span>Kembali</span>
+                  </button>
+                )}
+              </div>
+
               {/* Gallery Controls */}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="relative flex-1 min-w-[160px] max-w-xs">
                   <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="Cari nama gambar..."
+                    placeholder="Cari folder atau gambar..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full h-8 pl-8 pr-2.5 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[8px] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#FF7A1A]"
@@ -476,14 +560,14 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
 
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    {filteredFiles.length} berkas di Drive
+                    {filteredFolders.length > 0 && `${filteredFolders.length} folder • `}{filteredFiles.length} berkas
                   </span>
                   <button
                     type="button"
                     onClick={() => loadGallery(true)}
                     disabled={isGalleryLoading}
                     className="h-8 px-2.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-[8px] flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-2xs"
-                    title="Segarkan data gambar dari Google Drive (termasuk yang dipaste langsung ke Drive)"
+                    title="Segarkan data gambar & folder dari Google Drive"
                   >
                     <RotateCw className={`w-3.5 h-3.5 text-[#1E4FA8] dark:text-sky-400 ${isGalleryLoading ? 'animate-spin' : ''}`} />
                     <span>Segarkan</span>
@@ -504,10 +588,10 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               </div>
 
               {/* Gallery Content */}
-              {isGalleryLoading && galleryFiles.length === 0 ? (
+              {isGalleryLoading && galleryFiles.length === 0 && galleryFolders.length === 0 ? (
                 <div className="py-8 flex flex-col items-center justify-center text-slate-500 space-y-2">
                   <Loader2 className="w-6 h-6 animate-spin text-[#FF7A1A]" />
-                  <p className="text-xs">Memuat gambar dari folder Google Drive...</p>
+                  <p className="text-xs">Memuat berkas & folder dari Google Drive...</p>
                 </div>
               ) : galleryError ? (
                 <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-[10px] text-xs text-rose-700 dark:text-rose-300 flex items-center justify-between">
@@ -520,17 +604,17 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                     Coba Lagi
                   </button>
                 </div>
-              ) : filteredFiles.length === 0 ? (
+              ) : (filteredFiles.length === 0 && filteredFolders.length === 0) ? (
                 <div className="space-y-3">
                   <div className="p-5 text-center border border-dashed border-slate-200 dark:border-slate-700 rounded-[12px] bg-white dark:bg-slate-900">
                     <Images className="w-8 h-8 text-slate-400 mx-auto mb-1.5" />
                     <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                      {searchQuery ? 'Tidak ada gambar yang cocok dengan pencarian' : 'Belum ada gambar di folder Drive'}
+                      {searchQuery ? 'Tidak ada gambar atau folder yang cocok dengan pencarian' : 'Folder ini masih kosong'}
                     </p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
                       {searchQuery
                         ? 'Coba gunakan kata kunci pencarian yang lain.'
-                        : 'Anda bisa mengunggah lewat tab "Unggah" atau paste/drop langsung gambar ke folder Google Drive "Guber Smart Uploads", lalu klik tombol Segarkan di atas.'}
+                        : 'Anda bisa mengunggah lewat tab "Unggah" atau memasukkan file ke folder ini di Google Drive, lalu klik tombol Segarkan.'}
                     </p>
                   </div>
 
@@ -564,55 +648,93 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-56 overflow-y-auto p-1 scrollbar-thin">
-                  {filteredFiles.map((file) => {
-                    const isSelected =
-                      value &&
-                      (value === file.directUrl ||
-                        value === file.viewUrl ||
-                        value === file.downloadUrl ||
-                        (file.lh3Url && value === file.lh3Url) ||
-                        (file.fileId && value.includes(file.fileId)));
+                <div className="space-y-3 max-h-72 overflow-y-auto p-1 scrollbar-thin">
+                  {/* Subfolders Grid */}
+                  {filteredFolders.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                        Folder Dalam ({filteredFolders.length}):
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {filteredFolders.map((folder) => (
+                          <button
+                            type="button"
+                            key={folder.folderId}
+                            onClick={() => handleOpenSubfolder(folder)}
+                            className="flex items-center gap-2 p-2 rounded-[10px] bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-left transition-all group"
+                            title={`Buka folder: ${folder.name}`}
+                          >
+                            <Folder className="w-4 h-4 text-amber-500 shrink-0 group-hover:scale-110 transition-transform" />
+                            <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate flex-1">
+                              {folder.name}
+                            </span>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-                    return (
-                      <button
-                        type="button"
-                        key={file.fileId}
-                        onClick={() => {
-                          const chosenUrl = file.directUrl || file.viewUrl || '';
-                          setPreviewUrl(chosenUrl);
-                          setDriveSaved(true);
-                          setImgError(false);
-                          onChange('drive', chosenUrl);
-                        }}
-                        className={`group relative aspect-square rounded-[10px] overflow-hidden border-2 transition-all text-left bg-slate-100 dark:bg-slate-800 focus:outline-none ${
-                          isSelected
-                            ? 'border-[#FF7A1A] ring-2 ring-[#FF7A1A]/30 scale-[0.98]'
-                            : 'border-transparent hover:border-[#1E4FA8] dark:hover:border-sky-400'
-                        }`}
-                        title={file.name}
-                      >
-                        <img
-                          src={file.thumbnailUrl || file.directUrl}
-                          alt={file.name}
-                          loading="lazy"
-                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                        />
-                        {isSelected && (
-                          <div className="absolute inset-0 bg-[#FF7A1A]/20 flex items-center justify-center">
-                            <div className="w-6 h-6 rounded-full bg-[#FF7A1A] text-white flex items-center justify-center shadow-md">
-                              <Check className="w-3.5 h-3.5 stroke-[3]" />
-                            </div>
-                          </div>
-                        )}
-                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-1 pt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <p className="text-[10px] text-white font-medium truncate leading-tight">
-                            {file.name}
-                          </p>
-                        </div>
-                      </button>
-                    );
-                  })}
+                  {/* Files Grid */}
+                  {filteredFiles.length > 0 && (
+                    <div className="space-y-1">
+                      {filteredFolders.length > 0 && (
+                        <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 pt-1">
+                          Berkas Gambar ({filteredFiles.length}):
+                        </p>
+                      )}
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                        {filteredFiles.map((file) => {
+                          const isSelected =
+                            value &&
+                            (value === file.directUrl ||
+                              value === file.viewUrl ||
+                              value === file.downloadUrl ||
+                              (file.lh3Url && value === file.lh3Url) ||
+                              (file.fileId && value.includes(file.fileId)));
+
+                          return (
+                            <button
+                              type="button"
+                              key={file.fileId}
+                              onClick={() => {
+                                const chosenUrl = file.directUrl || file.viewUrl || '';
+                                setPreviewUrl(chosenUrl);
+                                setDriveSaved(true);
+                                setImgError(false);
+                                onChange('drive', chosenUrl);
+                              }}
+                              className={`group relative aspect-square rounded-[10px] overflow-hidden border-2 transition-all text-left bg-slate-100 dark:bg-slate-800 focus:outline-none ${
+                                isSelected
+                                  ? 'border-[#FF7A1A] ring-2 ring-[#FF7A1A]/30 scale-[0.98]'
+                                  : 'border-transparent hover:border-[#1E4FA8] dark:hover:border-sky-400'
+                              }`}
+                              title={file.name}
+                            >
+                              <img
+                                src={file.thumbnailUrl || file.directUrl}
+                                alt={file.name}
+                                loading="lazy"
+                                className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                              />
+                              {isSelected && (
+                                <div className="absolute inset-0 bg-[#FF7A1A]/20 flex items-center justify-center">
+                                  <div className="w-6 h-6 rounded-full bg-[#FF7A1A] text-white flex items-center justify-center shadow-md">
+                                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                  </div>
+                                </div>
+                              )}
+                              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-1 pt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <p className="text-[10px] text-white font-medium truncate leading-tight">
+                                  {file.name}
+                                </p>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </>

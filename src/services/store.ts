@@ -431,13 +431,25 @@ class StoreManager {
 
   public applyRemoteCourses(remoteCourses: Course[]): void {
     if (remoteCourses.length > 0) {
-      this.courses = remoteCourses.map((rc) => {
-        const existing = this.courses.find((c) => c.id === rc.id);
-        return {
-          ...rc,
-          coverValue: (rc.coverValue && rc.coverValue.trim() !== '') ? rc.coverValue : (existing?.coverValue || ''),
-        };
+      const remoteMap = new Map<string, Course>(remoteCourses.map((rc) => [rc.id, rc]));
+
+      const updatedCourses = this.courses.map((existing) => {
+        const remote = remoteMap.get(existing.id);
+        if (remote) {
+          remoteMap.delete(existing.id);
+          return {
+            ...remote,
+            coverValue: (remote.coverValue && remote.coverValue.trim() !== '') ? remote.coverValue : (existing.coverValue || ''),
+          };
+        }
+        return existing;
       });
+
+      remoteMap.forEach((newRemote) => {
+        updatedCourses.push(newRemote);
+      });
+
+      this.courses = updatedCourses.sort((a, b) => (a.order || 0) - (b.order || 0));
       this.save(STORAGE_KEYS.COURSES, this.courses);
       this.notify();
     }

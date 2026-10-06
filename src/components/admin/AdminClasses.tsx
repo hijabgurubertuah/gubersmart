@@ -4,6 +4,7 @@ import { ImageUploader } from '../common/ImageUploader';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { RichTextEditor } from '../common/RichTextEditor';
 import { formatRupiah, generateId } from '../../utils/crypto';
+import { firebaseSync } from '../../services/firebaseSync';
 import {
   Plus,
   Edit2,
@@ -12,6 +13,8 @@ import {
   Eye,
   EyeOff,
   BookOpen,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface AdminClassesProps {
@@ -34,6 +37,7 @@ export const AdminClasses: React.FC<AdminClassesProps> = ({
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form states
   const [coverSource, setCoverSource] = useState<FileSource>('tautan');
@@ -103,8 +107,8 @@ export const AdminClasses: React.FC<AdminClassesProps> = ({
     setIsEditing(true);
   };
 
-  // Submit / Save handler (saves only when user clicks Simpan)
-  const handleSave = (e: React.FormEvent) => {
+  // Submit / Save handler (saves to local store & directly writes to Firestore in real-time)
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
@@ -118,48 +122,63 @@ export const AdminClasses: React.FC<AdminClassesProps> = ({
       return;
     }
 
-    const authorPayload: CourseAuthor = {
-      name: editingCourse?.author?.name || 'Guber Smart',
-      role: 'Instruktur',
-    };
+    setIsSaving(true);
 
-    const payload: Course = {
-      id: editingCourse ? editingCourse.id : generateId('course'),
-      name: name.trim(),
-      title: name.trim(),
-      summary: editingCourse?.summary || '',
-      description: description.trim(),
-      price: Number(price) || 0,
-      originalPrice: Number(originalPrice) || 0,
-      lynkUrl: lynkUrl.trim() || 'https://lynk.id/guber-smart',
-      coverSource,
-      coverValue: coverValue.trim(),
-      category: editingCourse?.category || 'Kelas & Modul AI',
-      tags: editingCourse?.tags || ['AI'],
-      author: authorPayload,
-      status,
-      duration: editingCourse?.duration || 'Akses Selamanya',
-      order: editingCourse?.order || courses.length + 1,
-      createdAt: editingCourse?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      whatYouWillLearn: editingCourse?.whatYouWillLearn || [
-        'Skill Claude tingkat lanjut: tahu cara menulis prompt yang tepat',
-        'Semua tools GRATIS: tidak perlu keluar uang untuk software tambahan',
-        'Dipandu sampai deploy: aplikasimu online lewat Vercel',
-        'Responsif di desktop dan mobile',
-        'Hasil nyata & dijamin berhasil online',
-      ],
-      targetAudience: editingCourse?.targetAudience || [
-        'Ingin membuat website usaha, toko online, atau portofolio',
-        'Punya ide aplikasi tapi bingung mulai dari mana',
-        'Pemilik bisnis yang ingin mandiri tanpa bergantung pada developer',
-      ],
-    };
+    try {
+      const authorPayload: CourseAuthor = {
+        name: editingCourse?.author?.name || 'Guber Smart',
+        role: 'Instruktur',
+      };
 
-    onSaveCourse(payload);
-    setIsEditing(false);
-    localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
-    onToast('Kelas berhasil disimpan');
+      const payload: Course = {
+        id: editingCourse ? editingCourse.id : generateId('course'),
+        name: name.trim(),
+        title: name.trim(),
+        summary: editingCourse?.summary || '',
+        description: description.trim(),
+        price: Number(price) || 0,
+        originalPrice: Number(originalPrice) || 0,
+        lynkUrl: lynkUrl.trim() || 'https://lynk.id/guber-smart',
+        coverSource,
+        coverValue: coverValue.trim(),
+        category: editingCourse?.category || 'Kelas & Modul AI',
+        tags: editingCourse?.tags || ['AI'],
+        author: authorPayload,
+        status,
+        duration: editingCourse?.duration || 'Akses Selamanya',
+        order: editingCourse?.order || courses.length + 1,
+        createdAt: editingCourse?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        whatYouWillLearn: editingCourse?.whatYouWillLearn || [
+          'Skill Claude tingkat lanjut: tahu cara menulis prompt yang tepat',
+          'Semua tools GRATIS: tidak perlu keluar uang untuk software tambahan',
+          'Dipandu sampai deploy: aplikasimu online lewat Vercel',
+          'Responsif di desktop dan mobile',
+          'Hasil nyata & dijamin berhasil online',
+        ],
+        targetAudience: editingCourse?.targetAudience || [
+          'Ingin membuat website usaha, toko online, atau portofolio',
+          'Punya ide aplikasi tapi bingung mulai dari mana',
+          'Pemilik bisnis yang ingin mandiri tanpa bergantung pada developer',
+        ],
+      };
+
+      // 1. Save to local store
+      onSaveCourse(payload);
+
+      // 2. Direct write to Firebase Firestore for instant real-time sync
+      await firebaseSync.syncCourse(payload);
+
+      setIsEditing(false);
+      localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
+      onToast('Kelas berhasil disimpan & disinkronkan ke Firebase secara real-time!');
+    } catch (err: any) {
+      console.warn('Sync notice:', err);
+      setIsEditing(false);
+      onToast('Kelas berhasil disimpan');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleConfirmDelete = () => {
@@ -357,9 +376,20 @@ export const AdminClasses: React.FC<AdminClassesProps> = ({
               </button>
               <button
                 type="submit"
-                className="h-10 px-5 text-xs font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] rounded-[10px] transition-colors shadow-xs"
+                disabled={isSaving}
+                className="h-10 px-5 text-xs font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] rounded-[10px] flex items-center gap-1.5 transition-colors shadow-xs disabled:opacity-60"
               >
-                Simpan
+                {isSaving ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FF7A1A]" />
+                    <span>Menyimpan ke Firebase...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Simpan &amp; Sinkronkan</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

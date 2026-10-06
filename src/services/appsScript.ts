@@ -131,12 +131,32 @@ function doPost(e) {
       });
     }
 
-    // 5. Galeri: Ambil Daftar Berkas / Gambar dari Folder Drive
+    // 5. Galeri: Ambil Daftar Berkas, Gambar & Subfolder dari Folder Drive
     if (action === "listDriveFiles" || action === "listImages") {
       const folder = getOrCreateTargetFolder(data.driveFolderId);
+
+      // Ambil Subfolder
+      const folderList = [];
+      try {
+        const subFolders = folder.getFolders();
+        while (subFolders.hasNext()) {
+          const sf = subFolders.next();
+          folderList.push({
+            folderId: sf.getId(),
+            name: sf.getName(),
+            updatedAt: sf.getLastUpdated().toISOString(),
+            isFolder: true
+          });
+        }
+        folderList.sort(function(a, b) {
+          return a.name.localeCompare(b.name);
+        });
+      } catch (err) {}
+
+      // Ambil Berkas
       const files = folder.getFiles();
       const fileList = [];
-      const maxFiles = data.limit || 80;
+      const maxFiles = data.limit || 100;
       const onlyImages = data.onlyImages !== false;
 
       while (files.hasNext() && fileList.length < maxFiles) {
@@ -173,7 +193,8 @@ function doPost(e) {
           thumbnailUrl: thumbnailUrl,
           lh3Url: lh3Url,
           downloadUrl: downloadUrl,
-          viewUrl: viewUrl
+          viewUrl: viewUrl,
+          isFolder: false
         });
       }
 
@@ -187,6 +208,7 @@ function doPost(e) {
         folderId: folder.getId(),
         folderName: folder.getName(),
         folderUrl: folder.getUrl(),
+        folders: folderList,
         files: fileList
       });
     }
@@ -408,6 +430,13 @@ export function fileToBase64(file: File): Promise<string> {
   });
 }
 
+export interface DriveFolderItem {
+  folderId: string;
+  name: string;
+  updatedAt: string;
+  isFolder: true;
+}
+
 export interface DriveFileItem {
   fileId: string;
   name: string;
@@ -419,6 +448,7 @@ export interface DriveFileItem {
   lh3Url?: string;
   downloadUrl?: string;
   viewUrl?: string;
+  isFolder?: false;
 }
 
 export interface ListDriveFilesOptions {
@@ -431,12 +461,13 @@ export interface ListDriveFilesOptions {
 export async function listDriveFiles(options: ListDriveFilesOptions): Promise<{
   status: 'success' | 'error';
   files: DriveFileItem[];
+  folders: DriveFolderItem[];
   folderId?: string;
   folderName?: string;
   folderUrl?: string;
   message?: string;
 }> {
-  const { webAppUrl, driveFolderId, onlyImages = true, limit = 80 } = options;
+  const { webAppUrl, driveFolderId, onlyImages = true, limit = 100 } = options;
 
   if (!webAppUrl || webAppUrl.trim().length < 10) {
     throw new Error('URL Web App Google Script belum diatur');
@@ -462,6 +493,7 @@ export async function listDriveFiles(options: ListDriveFilesOptions): Promise<{
     return {
       status: 'success',
       files: resJson.files || [],
+      folders: resJson.folders || [],
       folderId: resJson.folderId,
       folderName: resJson.folderName,
       folderUrl: resJson.folderUrl,
