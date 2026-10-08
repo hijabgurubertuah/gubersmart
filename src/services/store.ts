@@ -131,8 +131,13 @@ class StoreManager {
     if (!this.cms.runningText) {
       this.cms.runningText = INITIAL_CMS_SETTINGS.runningText;
     }
-    if (!this.cms.identity.heroImages || this.cms.identity.heroImages.length === 0) {
-      this.cms.identity.heroImages = INITIAL_CMS_SETTINGS.identity.heroImages;
+    if (!Array.isArray(this.cms.identity.heroImages)) {
+      this.cms.identity.heroImages = [];
+    }
+    if (this.cms.navigation) {
+      this.cms.navigation = this.cms.navigation.filter(
+        (nav) => nav.path !== '/kelas' && nav.path !== '/tentang' && nav.path !== '/kontak'
+      );
     }
     const secFeatured = this.cms.sections?.find((s) => s.id === 'sec_featured');
     if (secFeatured) {
@@ -406,6 +411,9 @@ class StoreManager {
       logoUrl: (remoteCms.identity && 'logoUrl' in remoteCms.identity)
         ? (remoteCms.identity.logoUrl || '')
         : this.cms.identity.logoUrl,
+      heroImages: (remoteCms.identity && Array.isArray(remoteCms.identity.heroImages))
+        ? remoteCms.identity.heroImages
+        : this.cms.identity.heroImages,
     };
 
     this.cms = {

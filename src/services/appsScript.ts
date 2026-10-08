@@ -74,7 +74,11 @@ function doPost(e) {
       }
 
       const mimeType = data.mimeType || "image/jpeg";
-      const fileName = data.fileName || ("upload_" + new Date().getTime() + ".jpg");
+      let ext = ".jpg";
+      if (mimeType.indexOf("png") > -1) ext = ".png";
+      else if (mimeType.indexOf("webp") > -1) ext = ".webp";
+      else if (mimeType.indexOf("svg") > -1) ext = ".svg";
+      const fileName = data.fileName || ("upload_" + new Date().getTime() + ext);
 
       const decodedBytes = Utilities.base64Decode(cleanBase64);
       const blob = Utilities.newBlob(decodedBytes, mimeType, fileName);
@@ -334,9 +338,22 @@ export async function uploadFileToDrive(options: UploadDriveOptions): Promise<Up
 
   if (compressedDataUrl) {
     base64 = compressedDataUrl.split(',')[1] || compressedDataUrl;
-    mimeType = 'image/jpeg';
+    if (compressedDataUrl.startsWith('data:image/png')) {
+      mimeType = 'image/png';
+    } else if (compressedDataUrl.startsWith('data:image/svg')) {
+      mimeType = 'image/svg+xml';
+    } else if (compressedDataUrl.startsWith('data:image/webp')) {
+      mimeType = 'image/webp';
+    } else if (file.type && file.type.trim() !== '') {
+      mimeType = file.type;
+    } else {
+      mimeType = 'image/jpeg';
+    }
   } else {
     base64 = await fileToBase64(file);
+    if (file.type && file.type.trim() !== '') {
+      mimeType = file.type;
+    }
   }
 
   const payload = {
@@ -357,9 +374,10 @@ export async function uploadFileToDrive(options: UploadDriveOptions): Promise<Up
 
   const resJson = await response.json();
   if (resJson.status === 'success') {
+    const isTransparent = mimeType.includes('png') || mimeType.includes('svg');
     return {
       status: 'success',
-      directUrl: resJson.directUrl || resJson.lh3Url || resJson.viewUrl,
+      directUrl: isTransparent ? (resJson.lh3Url || resJson.directUrl || resJson.viewUrl) : (resJson.directUrl || resJson.lh3Url || resJson.viewUrl),
       downloadUrl: resJson.downloadUrl,
       viewUrl: resJson.viewUrl,
       fileId: resJson.fileId,
@@ -374,6 +392,12 @@ export async function uploadFileToDrive(options: UploadDriveOptions): Promise<Up
 
 // Client-side image compression
 export async function compressImageFile(file: File, maxDimension = 1200, quality = 0.8): Promise<{ dataUrl: string; size: number }> {
+  // If SVG, preserve raw vector without rasterizing to canvas
+  if (file.type === 'image/svg+xml') {
+    const rawBase64 = await fileToBase64(file);
+    return { dataUrl: `data:image/svg+xml;base64,${rawBase64}`, size: file.size };
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -399,11 +423,26 @@ export async function compressImageFile(file: File, maxDimension = 1200, quality
         if (!ctx) {
           return resolve({ dataUrl: event.target?.result as string, size: file.size });
         }
+
+        // Draw image onto canvas
         ctx.drawImage(img, 0, 0, width, height);
 
-        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        // If PNG, use 'image/png' to preserve transparent alpha channel (never JPEG which forces black background)
+        const isPng = file.type === 'image/png' || file.name.toLowerCase().endsWith('.png');
+        const isWebp = file.type === 'image/webp' || file.name.toLowerCase().endsWith('.webp');
+
+        let dataUrl: string;
+        if (isPng) {
+          dataUrl = canvas.toDataURL('image/png');
+        } else if (isWebp) {
+          dataUrl = canvas.toDataURL('image/webp', quality);
+        } else {
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+
         // Estimate size from base64
-        const stringLength = dataUrl.length - 'data:image/jpeg;base64,'.length;
+        const prefixLength = dataUrl.indexOf(',') + 1;
+        const stringLength = dataUrl.length - prefixLength;
         const sizeInBytes = 4 * Math.ceil(stringLength / 3) * 0.5624896334383612;
         resolve({ dataUrl, size: Math.round(sizeInBytes) });
       };

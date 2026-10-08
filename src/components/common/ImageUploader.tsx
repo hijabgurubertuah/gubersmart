@@ -769,7 +769,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                   src={previewUrl}
                   alt="Preview"
                   onError={() => setImgError(true)}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain p-1"
                 />
               )}
             </div>

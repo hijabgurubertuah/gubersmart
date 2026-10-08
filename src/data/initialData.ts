@@ -21,11 +21,7 @@ export const INITIAL_CMS_SETTINGS: CMSSettings = {
     tagline: 'Dari ide jadi aplikasi, selangkah demi selangkah',
     heroTitle: 'Buat App Web tanpa perlu paham koding',
     heroSubtitle: 'Punya Ide Aplikasi? Wujudkan Tanpa Perlu Bisa Coding! Belajar membuat aplikasi web dari nol sampai online dengan bantuan AI Claude.',
-    heroImages: [
-      'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1600&auto=format&fit=crop',
-    ],
+    heroImages: [],
     lynkUrl: 'https://lynk.id/guber-smart',
     whatsapp: '6281234567890',
     logoUrl: '/favicon.svg',
@@ -55,10 +51,7 @@ export const INITIAL_CMS_SETTINGS: CMSSettings = {
   },
   navigation: [
     { id: 'nav_home', label: 'Beranda', path: '/', icon: 'Home', isVisible: true, order: 1 },
-    { id: 'nav_classes', label: 'Kelas', path: '/kelas', icon: 'BookOpen', isVisible: true, order: 2 },
-    { id: 'nav_examples', label: 'Contoh Aplikasi', path: '/contoh', icon: 'LayoutGrid', isVisible: true, order: 3 },
-    { id: 'nav_about', label: 'Tentang', path: '/tentang', icon: 'Info', isVisible: true, order: 4 },
-    { id: 'nav_contact', label: 'Kontak', path: '/kontak', icon: 'MessageCircle', isVisible: true, order: 5 },
+    { id: 'nav_examples', label: 'Contoh Aplikasi', path: '/contoh', icon: 'LayoutGrid', isVisible: true, order: 2 },
   ],
   buttons: [
     { id: 'btn_hero_class', label: 'Lihat Kelas', url: '/kelas', color: '#FF7A1A', isVisible: true },

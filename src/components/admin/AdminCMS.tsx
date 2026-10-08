@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { CMSSettings, Role } from '../../types';
 import { ImageUploader } from '../common/ImageUploader';
 import { RunningTextBanner } from '../common/RunningTextBanner';
-import { RotateCcw, Save, Eye, Palette, Check, Trash2, Megaphone, Images, Layers, Sparkles, Plus } from 'lucide-react';
+import { Save, Eye, Palette, Check, Trash2, Megaphone, Images, Layers, Sparkles, Plus } from 'lucide-react';
 
 interface AdminCMSProps {
   role: Role;
   cms: CMSSettings;
   onUpdateCMS: (updates: Partial<CMSSettings>) => void;
-  onResetCMS: () => void;
+  onResetCMS?: () => void;
   onToast: (msg: string) => void;
 }
 
@@ -16,7 +16,6 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
   role,
   cms,
   onUpdateCMS,
-  onResetCMS,
   onToast,
 }) => {
   // Local state copy
@@ -67,12 +66,6 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
     setTimeout(() => setIsSaving(false), 600);
   };
 
-  const handleReset = () => {
-    onResetCMS();
-    setFormData(JSON.parse(JSON.stringify(cms)));
-    onToast('Pengaturan dipulihkan ke bawaan');
-  };
-
   const runningTextData = formData.runningText || {
     enabled: true,
     text: '🔥 Promo Spesial: Dapatkan Akses Seluruh Kelas & Template Aplikasi AI!',
@@ -84,11 +77,9 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
     popupDescription: 'Dapatkan akses eksklusif ke seluruh materi, modul update berkala, dan komunitas diskusi.',
   };
 
-  const heroImagesData = formData.identity.heroImages || [
-    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1600&auto=format&fit=crop',
-  ];
+  const heroImagesData = Array.isArray(formData.identity.heroImages)
+    ? formData.identity.heroImages
+    : [];
 
   return (
     <div className="space-y-6">
@@ -181,11 +172,11 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                 <div className="flex items-center gap-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-600 dark:text-slate-300">
                   <span className="text-slate-400 shrink-0">Pratinjau di Navbar:</span>
                   <div className="flex items-center gap-2.5 px-3 py-1.5 bg-white dark:bg-slate-900 rounded-[10px] border border-slate-200 dark:border-slate-700 shadow-2xs">
-                    <div className="w-8 h-8 rounded-[8px] bg-[#0B2A5B] flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="w-8 h-8 rounded-[8px] bg-transparent flex items-center justify-center overflow-hidden shrink-0">
                       <img
                         src={formData.identity.logoUrl}
                         alt="Logo Preview"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                     <span className="font-heading font-bold text-slate-900 dark:text-white text-sm">
@@ -258,45 +249,73 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                     Gambar background header di halaman utama yang bergeser otomatis secara berkala.
                   </p>
                 </div>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-[#1E4FA8] dark:text-blue-300">
-                  {heroImagesData.length} Slide
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-[#1E4FA8] dark:text-blue-300">
+                    {heroImagesData.length} Slide
+                  </span>
+                  {heroImagesData.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          identity: {
+                            ...formData.identity,
+                            heroImages: [],
+                          },
+                        });
+                        onToast('Semua gambar latar cover telah dihapus');
+                      }}
+                      className="text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 px-2 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                    >
+                      Hapus Semua Latar
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Grid slide images */}
               <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {heroImagesData.map((imgUrl, idx) => (
-                    <div
-                      key={idx}
-                      className="group relative aspect-video rounded-[12px] overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-900 shadow-xs"
-                    >
-                      <img src={imgUrl} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between p-2">
-                        <span className="text-xs font-bold text-white px-2 py-0.5 bg-black/60 rounded-md">
-                          Slide {idx + 1}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = heroImagesData.filter((_, i) => i !== idx);
-                            setFormData({
-                              ...formData,
-                              identity: {
-                                ...formData.identity,
-                                heroImages: updated.length > 0 ? updated : ['https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1600&auto=format&fit=crop'],
-                              },
-                            });
-                          }}
-                          className="p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full transition-transform active:scale-90"
-                          title="Hapus slide ini"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                {heroImagesData.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {heroImagesData.map((imgUrl, idx) => (
+                      <div
+                        key={idx}
+                        className="group relative aspect-video rounded-[12px] overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-900 shadow-xs"
+                      >
+                        <img src={imgUrl} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between p-2">
+                          <span className="text-xs font-bold text-white px-2 py-0.5 bg-black/60 rounded-md">
+                            Slide {idx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = heroImagesData.filter((_, i) => i !== idx);
+                              setFormData({
+                                ...formData,
+                                identity: {
+                                  ...formData.identity,
+                                  heroImages: updated,
+                                },
+                              });
+                              onToast('Slide gambar latar berhasil dihapus');
+                            }}
+                            className="p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full transition-transform active:scale-90"
+                            title="Hapus slide ini"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-[12px] bg-slate-100/70 dark:bg-slate-800/60 border border-dashed border-slate-300 dark:border-slate-700 text-center space-y-1 text-slate-500 dark:text-slate-400">
+                    <p className="text-xs font-semibold">Tidak ada gambar latar cover yang terpasang.</p>
+                    <p className="text-[11px]">Header di halaman publik saat ini menggunakan warna gradien/solid bawaan tanpa gambar latar.</p>
+                  </div>
+                )}
 
                 {/* Tambah slide baru */}
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
@@ -775,46 +794,51 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
         {/* 3. Navigasi */}
         {activeTab === 'navigation' && (
           <div className="space-y-3">
-            {formData.navigation.map((nav, idx) => (
-              <div
-                key={nav.id}
-                className="p-3.5 rounded-[12px] bg-slate-50 dark:bg-slate-800 border flex items-center justify-between gap-3"
-              >
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={nav.isVisible}
-                    onChange={(e) => {
-                      const list = [...formData.navigation];
-                      list[idx].isVisible = e.target.checked;
-                      setFormData({ ...formData, navigation: list });
-                    }}
-                    className="w-4 h-4 text-[#FF7A1A]"
-                  />
-                  <input
-                    type="text"
-                    value={nav.label}
-                    onChange={(e) => {
-                      const list = [...formData.navigation];
-                      list[idx].label = e.target.value;
-                      setFormData({ ...formData, navigation: list });
-                    }}
-                    className="h-9 px-3 text-xs sm:text-sm font-semibold bg-white border rounded-[8px]"
-                  />
-                  <span className="text-xs text-slate-400 font-mono">{nav.path}</span>
-                </div>
-                <input
-                  type="number"
-                  value={nav.order}
-                  onChange={(e) => {
-                    const list = [...formData.navigation];
-                    list[idx].order = Number(e.target.value);
-                    setFormData({ ...formData, navigation: list });
-                  }}
-                  className="w-16 h-8 px-2 text-xs bg-white border rounded-[8px]"
-                />
-              </div>
-            ))}
+            {formData.navigation
+              .filter((n) => n.path !== '/kelas' && n.path !== '/tentang' && n.path !== '/kontak')
+              .map((nav) => {
+                const idx = formData.navigation.findIndex((item) => item.id === nav.id);
+                return (
+                  <div
+                    key={nav.id}
+                    className="p-3.5 rounded-[12px] bg-slate-50 dark:bg-slate-800 border flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={nav.isVisible}
+                        onChange={(e) => {
+                          const list = [...formData.navigation];
+                          if (idx >= 0) list[idx].isVisible = e.target.checked;
+                          setFormData({ ...formData, navigation: list });
+                        }}
+                        className="w-4 h-4 text-[#FF7A1A]"
+                      />
+                      <input
+                        type="text"
+                        value={nav.label}
+                        onChange={(e) => {
+                          const list = [...formData.navigation];
+                          if (idx >= 0) list[idx].label = e.target.value;
+                          setFormData({ ...formData, navigation: list });
+                        }}
+                        className="h-9 px-3 text-xs sm:text-sm font-semibold bg-white border rounded-[8px]"
+                      />
+                      <span className="text-xs text-slate-400 font-mono">{nav.path}</span>
+                    </div>
+                    <input
+                      type="number"
+                      value={nav.order}
+                      onChange={(e) => {
+                        const list = [...formData.navigation];
+                        if (idx >= 0) list[idx].order = Number(e.target.value);
+                        setFormData({ ...formData, navigation: list });
+                      }}
+                      className="w-16 h-8 px-2 text-xs bg-white border rounded-[8px]"
+                    />
+                  </div>
+                );
+              })}
           </div>
         )}
 
@@ -1088,14 +1112,6 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
             <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={handleReset}
-                className="min-h-[44px] px-5 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-[12px] flex items-center gap-2"
-              >
-                <RotateCcw className="w-4 h-4" />
-                Pulihkan Bawaan
-              </button>
-              <button
-                type="button"
                 onClick={handleSave}
                 disabled={isSaving}
                 className="min-h-[44px] px-6 text-sm font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] disabled:opacity-75 rounded-[12px] flex items-center gap-2 shadow-xs"
@@ -1109,15 +1125,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
 
         {/* Persistent bottom save action bar on every tab */}
         {activeTab !== 'save' && (
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={handleReset}
-              className="min-h-[42px] px-4 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-[12px] flex items-center gap-2 transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" />
-              Pulihkan Bawaan
-            </button>
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-end gap-3">
             <button
               type="button"
               onClick={handleSave}

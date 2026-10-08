@@ -31,16 +31,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   onOpenClassDetail,
 }) => {
   // Background Carousel Slides
-  const defaultHeroSlides = [
-    'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1600&auto=format&fit=crop',
-    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1600&auto=format&fit=crop',
-  ];
-
-  const heroSlides =
-    cms.identity.heroImages && cms.identity.heroImages.length > 0
-      ? cms.identity.heroImages
-      : defaultHeroSlides;
+  const heroSlides = Array.isArray(cms.identity.heroImages) ? cms.identity.heroImages : [];
 
   const [activeSlide, setActiveSlide] = useState(0);
 
@@ -86,29 +77,35 @@ export const HomePage: React.FC<HomePageProps> = ({
     <div className="w-full space-y-16 sm:space-y-24 pb-20">
       {/* 1. Hero Section with Background Carousel */}
       {secHero?.isVisible && (
-        <section className="relative overflow-hidden min-h-[220px] sm:min-h-[280px] lg:min-h-[320px] flex items-center justify-center bg-slate-950 group">
+        <section
+          className={`relative overflow-hidden min-h-[220px] sm:min-h-[280px] lg:min-h-[320px] flex items-center justify-center ${
+            heroSlides.length > 0 ? 'bg-slate-950' : 'bg-gradient-to-r from-[#0B2A5B] to-[#1E4FA8]'
+          } group`}
+        >
           {/* Background Images Carousel */}
-          <div className="absolute inset-0 z-0">
-            {heroSlides.map((slideUrl, idx) => (
-              <div
-                key={idx}
-                className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
-                  idx === activeSlide
-                    ? 'opacity-100 scale-100'
-                    : 'opacity-0 scale-105 pointer-events-none'
-                }`}
-              >
-                <img
-                  src={slideUrl}
-                  alt={`Hero Slide ${idx + 1}`}
-                  className="w-full h-full object-cover object-center"
-                />
-              </div>
-            ))}
+          {heroSlides.length > 0 && (
+            <div className="absolute inset-0 z-0">
+              {heroSlides.map((slideUrl, idx) => (
+                <div
+                  key={idx}
+                  className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
+                    idx === activeSlide
+                      ? 'opacity-100 scale-100'
+                      : 'opacity-0 scale-105 pointer-events-none'
+                  }`}
+                >
+                  <img
+                    src={slideUrl}
+                    alt={`Hero Slide ${idx + 1}`}
+                    className="w-full h-full object-cover object-center"
+                  />
+                </div>
+              ))}
 
-            {/* Dark Aesthetic Translucent Gradient Overlay for crisp text readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-900/60 backdrop-blur-[1px]" />
-          </div>
+              {/* Dark Aesthetic Translucent Gradient Overlay for crisp text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-900/60 backdrop-blur-[1px]" />
+            </div>
+          )}
 
           {/* Carousel Arrows on Desktop (Hover) */}
           {heroSlides.length > 1 && (

@@ -103,8 +103,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
     }
   };
 
-  const navItems = cms.navigation
-    .filter((item) => item.isVisible)
+  const hiddenNavPaths = ['/kelas', '/tentang', '/kontak'];
+  const navItems = (cms.navigation || [])
+    .filter((item) => item.isVisible && !hiddenNavPaths.includes(item.path))
     .sort((a, b) => a.order - b.order);
 
   const getDashboardPath = () => {
@@ -148,9 +149,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({
         {/* Sidebar Header */}
         <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-[10px] bg-[#0B2A5B] flex items-center justify-center text-white overflow-hidden shrink-0">
+            <div className={`w-8 h-8 rounded-[10px] ${cms.identity.logoUrl && cms.identity.logoUrl.trim() !== '' ? 'bg-transparent' : 'bg-[#0B2A5B]'} flex items-center justify-center text-white overflow-hidden shrink-0`}>
               {cms.identity.logoUrl && cms.identity.logoUrl.trim() !== '' ? (
-                <img src={cms.identity.logoUrl} alt="" className="w-full h-full object-cover" />
+                <img src={cms.identity.logoUrl} alt="" className="w-full h-full object-contain" />
               ) : (
                 <span className="font-heading font-bold text-sm text-[#FF7A1A]">G</span>
               )}
