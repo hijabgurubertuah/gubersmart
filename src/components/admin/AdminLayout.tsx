@@ -34,6 +34,18 @@ import {
   X,
   Shield,
   ChevronRight,
+  ChevronDown,
+  Image as ImageIcon,
+  Megaphone,
+  Palette,
+  Compass,
+  MousePointer,
+  Layers,
+  FileText,
+  Sparkles,
+  MapPin,
+  Phone,
+  Eye,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -108,10 +120,35 @@ export const AdminLayout: React.FC<AdminLayoutProps> = (props) => {
   };
 
   const [activeTab, setActiveTab] = useState<string>(getInitialTab);
+  const [activeCmsTab, setActiveCmsTab] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('guber_admin_cms_tab');
+      if (saved) return saved;
+    } catch {
+      // ignore
+    }
+    return role === 'Superadmin' ? 'identity' : 'runningText';
+  });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarDrawerRef = useRef<HTMLDivElement>(null);
 
   const isSuperadmin = role === 'Superadmin';
+
+  const handleSelectCmsTab = (tabId: string) => {
+    setActiveTab('cms');
+    setActiveCmsTab(tabId);
+    try {
+      localStorage.setItem('guber_admin_tab', 'cms');
+      localStorage.setItem('guber_admin_cms_tab', tabId);
+      let newHash = '#/admin?tab=cms';
+      if (window.location.hash !== newHash) {
+        window.history.replaceState(null, '', newHash);
+      }
+    } catch {
+      // ignore
+    }
+    setMobileSidebarOpen(false);
+  };
 
   // Sync activeTab to localStorage & URL hash
   const handleSelectTab = (tabId: string) => {
@@ -191,6 +228,31 @@ export const AdminLayout: React.FC<AdminLayoutProps> = (props) => {
       : []),
   ];
 
+  const cmsSubTabs = isSuperadmin
+    ? [
+        { id: 'identity', label: 'Identitas & Banner', icon: ImageIcon },
+        { id: 'runningText', label: 'Teks Berjalan', icon: Megaphone },
+        { id: 'theme', label: 'Tema', icon: Palette },
+        { id: 'navigation', label: 'Navigasi', icon: Compass },
+        { id: 'buttons', label: 'Tombol', icon: MousePointer },
+        { id: 'sections', label: 'Bagian Halaman', icon: Layers },
+        { id: 'pages', label: 'Halaman', icon: FileText },
+        { id: 'features', label: 'Fitur', icon: Sparkles },
+        { id: 'media', label: 'Lokasi & Media', icon: MapPin },
+        { id: 'footer', label: 'Footer & Kontak', icon: Phone },
+        { id: 'save', label: 'Pratinjau & Simpan', icon: Eye },
+      ]
+    : [
+        { id: 'identity', label: 'Identitas & Banner', icon: ImageIcon },
+        { id: 'runningText', label: 'Teks Berjalan', icon: Megaphone },
+        { id: 'sections', label: 'Bagian Halaman', icon: Layers },
+        { id: 'pages', label: 'Halaman', icon: FileText },
+        { id: 'buttons', label: 'Tombol', icon: MousePointer },
+        { id: 'navigation', label: 'Navigasi', icon: Compass },
+        { id: 'footer', label: 'Footer & Kontak', icon: Phone },
+        { id: 'save', label: 'Pratinjau & Simpan', icon: Eye },
+      ];
+
   const currentMenuLabel = menuItems.find((m) => m.id === activeTab)?.label || 'Ringkasan';
 
   return (
@@ -260,22 +322,51 @@ export const AdminLayout: React.FC<AdminLayoutProps> = (props) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleSelectTab(item.id)}
-                className={`w-full min-h-[42px] px-3.5 rounded-[12px] text-xs font-semibold flex items-center justify-between text-left transition-all ${
-                  isActive
-                    ? 'bg-[#0B2A5B] text-white shadow-xs font-bold'
-                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#FF7A1A]' : 'text-slate-400'}`} />
-                  <span className="truncate">{item.label}</span>
-                </div>
-                <ChevronRight className={`w-3.5 h-3.5 ${isActive ? 'text-white/60' : 'text-slate-300 dark:text-slate-600'}`} />
-              </button>
+              <React.Fragment key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => handleSelectTab(item.id)}
+                  className={`w-full min-h-[42px] px-3.5 rounded-[12px] text-xs font-semibold flex items-center justify-between text-left transition-all ${
+                    isActive
+                      ? 'bg-[#0B2A5B] text-white shadow-xs font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#FF7A1A]' : 'text-slate-400'}`} />
+                    <span className="truncate">{item.label}</span>
+                  </div>
+                  {item.id === 'cms' ? (
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isActive ? 'text-[#FF7A1A] rotate-180' : 'text-slate-400'}`} />
+                  ) : (
+                    <ChevronRight className={`w-3.5 h-3.5 ${isActive ? 'text-white/60' : 'text-slate-300 dark:text-slate-600'}`} />
+                  )}
+                </button>
+
+                {item.id === 'cms' && isActive && (
+                  <div className="pl-2 pr-1 py-1.5 space-y-1 my-1.5 border-l-2 border-[#FF7A1A] ml-4 bg-slate-50/60 dark:bg-slate-800/40 rounded-r-[10px]">
+                    {cmsSubTabs.map((ct) => {
+                      const isSubActive = activeCmsTab === ct.id;
+                      const SubIcon = ct.icon;
+                      return (
+                        <button
+                          key={ct.id}
+                          type="button"
+                          onClick={() => handleSelectCmsTab(ct.id)}
+                          className={`w-full min-h-[38px] px-2.5 rounded-[10px] text-xs font-semibold flex items-center gap-2.5 text-left transition-all ${
+                            isSubActive
+                              ? 'bg-[#FF7A1A] text-white font-bold shadow-xs'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400'}`} />
+                          <span className="truncate flex-1">{ct.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
         </div>
@@ -300,18 +391,53 @@ export const AdminLayout: React.FC<AdminLayoutProps> = (props) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             return (
-              <button
-                key={item.id}
-                onClick={() => handleSelectTab(item.id)}
-                className={`w-full min-h-[44px] px-3.5 rounded-[12px] text-sm font-semibold flex items-center gap-3 text-left transition-all ${
-                  isActive
-                    ? 'bg-[#0B2A5B] text-white shadow-xs font-bold'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
-              >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#FF7A1A]' : ''}`} />
-                <span className="truncate">{item.label}</span>
-              </button>
+              <React.Fragment key={item.id}>
+                <button
+                  type="button"
+                  onClick={() => handleSelectTab(item.id)}
+                  className={`w-full min-h-[44px] px-3.5 rounded-[12px] text-sm font-semibold flex items-center justify-between text-left transition-all ${
+                    isActive
+                      ? 'bg-[#0B2A5B] text-white shadow-xs font-bold'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#FF7A1A]' : 'text-slate-400'}`} />
+                    <span className="truncate">{item.label}</span>
+                  </div>
+                  {item.id === 'cms' && (
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isActive ? 'text-[#FF7A1A] rotate-180' : 'text-slate-400'
+                      }`}
+                    />
+                  )}
+                </button>
+
+                {item.id === 'cms' && isActive && (
+                  <div className="pl-2 pr-1 py-1.5 space-y-1 my-1.5 border-l-2 border-[#FF7A1A] ml-4 bg-slate-50/60 dark:bg-slate-800/40 rounded-r-[10px]">
+                    {cmsSubTabs.map((ct) => {
+                      const isSubActive = activeCmsTab === ct.id;
+                      const SubIcon = ct.icon;
+                      return (
+                        <button
+                          key={ct.id}
+                          type="button"
+                          onClick={() => handleSelectCmsTab(ct.id)}
+                          className={`w-full min-h-[38px] px-2.5 rounded-[10px] text-xs font-semibold flex items-center gap-2.5 text-left transition-all ${
+                            isSubActive
+                              ? 'bg-[#FF7A1A] text-white font-bold shadow-xs'
+                              : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700/80 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                        >
+                          <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-white' : 'text-slate-400 dark:text-slate-400'}`} />
+                          <span className="truncate flex-1">{ct.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
         </aside>
@@ -504,6 +630,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = (props) => {
               onUpdateCMS={props.onUpdateCMS}
               onResetCMS={props.onResetCMS}
               onToast={onToast}
+              activeSubTab={activeCmsTab}
+              onSelectSubTab={setActiveCmsTab}
             />
           )}
 

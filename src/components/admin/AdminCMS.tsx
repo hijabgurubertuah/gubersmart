@@ -2,7 +2,25 @@ import React, { useState } from 'react';
 import { CMSSettings, Role } from '../../types';
 import { ImageUploader } from '../common/ImageUploader';
 import { RunningTextBanner } from '../common/RunningTextBanner';
-import { Save, Eye, Palette, Check, Trash2, Megaphone, Images, Layers, Sparkles, Plus } from 'lucide-react';
+import {
+  Save,
+  Eye,
+  Palette,
+  Check,
+  Trash2,
+  Megaphone,
+  Images,
+  Layers,
+  Sparkles,
+  Plus,
+  Compass,
+  MousePointer,
+  FileText,
+  Zap,
+  MapPin,
+  Phone,
+  Sliders,
+} from 'lucide-react';
 
 interface AdminCMSProps {
   role: Role;
@@ -10,6 +28,8 @@ interface AdminCMSProps {
   onUpdateCMS: (updates: Partial<CMSSettings>) => void;
   onResetCMS?: () => void;
   onToast: (msg: string) => void;
+  activeSubTab?: string;
+  onSelectSubTab?: (tabId: string) => void;
 }
 
 export const AdminCMS: React.FC<AdminCMSProps> = ({
@@ -17,37 +37,59 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
   cms,
   onUpdateCMS,
   onToast,
+  activeSubTab: externalActiveTab,
+  onSelectSubTab,
 }) => {
   // Local state copy
   const [formData, setFormData] = useState<CMSSettings>(JSON.parse(JSON.stringify(cms)));
-  const [activeTab, setActiveTab] = useState<string>(
-    role === 'Superadmin' ? 'identity' : 'runningText'
-  );
+  const [internalActiveTab, setInternalActiveTab] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('guber_admin_cms_tab');
+      if (saved) return saved;
+    } catch {
+      // ignore
+    }
+    return role === 'Superadmin' ? 'identity' : 'runningText';
+  });
 
-  // Tabs allowed based on role
+  const activeTab = externalActiveTab || internalActiveTab;
+
+  const handleSelectTab = (tabId: string) => {
+    setInternalActiveTab(tabId);
+    try {
+      localStorage.setItem('guber_admin_cms_tab', tabId);
+    } catch {
+      // ignore
+    }
+    if (onSelectSubTab) {
+      onSelectSubTab(tabId);
+    }
+  };
+
+  // Tabs allowed based on role with icons
   const allowedTabs = role === 'Superadmin'
     ? [
-        { id: 'identity', label: 'Identitas & Banner' },
-        { id: 'runningText', label: 'Teks Berjalan' },
-        { id: 'theme', label: 'Tema' },
-        { id: 'navigation', label: 'Navigasi' },
-        { id: 'buttons', label: 'Tombol' },
-        { id: 'sections', label: 'Bagian Halaman' },
-        { id: 'pages', label: 'Halaman' },
-        { id: 'features', label: 'Fitur' },
-        { id: 'media', label: 'Lokasi & Media' },
-        { id: 'footer', label: 'Footer & Kontak' },
-        { id: 'save', label: 'Pratinjau & Simpan' },
+        { id: 'identity', label: 'Identitas & Banner', icon: Images },
+        { id: 'runningText', label: 'Teks Berjalan', icon: Megaphone },
+        { id: 'theme', label: 'Tema', icon: Palette },
+        { id: 'navigation', label: 'Navigasi', icon: Compass },
+        { id: 'buttons', label: 'Tombol', icon: MousePointer },
+        { id: 'sections', label: 'Bagian Halaman', icon: Layers },
+        { id: 'pages', label: 'Halaman', icon: FileText },
+        { id: 'features', label: 'Fitur', icon: Zap },
+        { id: 'media', label: 'Lokasi & Media', icon: MapPin },
+        { id: 'footer', label: 'Footer & Kontak', icon: Phone },
+        { id: 'save', label: 'Pratinjau & Simpan', icon: Eye },
       ]
     : [
-        { id: 'identity', label: 'Identitas & Banner' },
-        { id: 'runningText', label: 'Teks Berjalan' },
-        { id: 'sections', label: 'Bagian Halaman' },
-        { id: 'pages', label: 'Halaman' },
-        { id: 'buttons', label: 'Tombol' },
-        { id: 'navigation', label: 'Navigasi' },
-        { id: 'footer', label: 'Footer & Kontak' },
-        { id: 'save', label: 'Pratinjau & Simpan' },
+        { id: 'identity', label: 'Identitas & Banner', icon: Images },
+        { id: 'runningText', label: 'Teks Berjalan', icon: Megaphone },
+        { id: 'sections', label: 'Bagian Halaman', icon: Layers },
+        { id: 'pages', label: 'Halaman', icon: FileText },
+        { id: 'buttons', label: 'Tombol', icon: MousePointer },
+        { id: 'navigation', label: 'Navigasi', icon: Compass },
+        { id: 'footer', label: 'Footer & Kontak', icon: Phone },
+        { id: 'save', label: 'Pratinjau & Simpan', icon: Eye },
       ];
 
   const [isSaving, setIsSaving] = useState(false);
@@ -84,9 +126,19 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
   return (
     <div className="space-y-6">
       <div className="sticky top-16 z-20 bg-slate-50/95 dark:bg-slate-950/95 py-3 -mt-2 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-          Pengaturan Tampilan (CMS)
-        </h2>
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
+              Pengaturan Tampilan (CMS)
+            </h2>
+            <span className="text-xs px-2.5 py-1 rounded-full bg-[#FF7A1A]/10 text-[#FF7A1A] font-semibold border border-[#FF7A1A]/20">
+              {allowedTabs.find((t) => t.id === activeTab)?.label || 'Pengaturan'}
+            </span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Pilih menu/tab CMS melalui sidebar panel admin di sebelah kiri.
+          </p>
+        </div>
         <div className="flex items-center gap-2">
           <button
             onClick={handleSave}
@@ -99,25 +151,8 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
         </div>
       </div>
 
-      {/* Tabs pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-200 dark:border-slate-800">
-        {allowedTabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={`min-h-[40px] px-4 py-2 rounded-[12px] text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors ${
-              activeTab === t.id
-                ? 'bg-[#0B2A5B] text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Panels */}
-      <div className="bg-white dark:bg-slate-900 rounded-[14px] p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-6">
+      {/* Konten Formulir CMS Langsung (Menu sudah berada di sidebar panel admin) */}
+      <div className="w-full bg-white dark:bg-slate-900 rounded-[14px] p-6 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm space-y-6">
         {/* 1. Identitas & Logo */}
         {activeTab === 'identity' && (
           <div className="space-y-5 max-w-2xl">
