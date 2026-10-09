@@ -4,6 +4,8 @@ import {
   deleteDoc,
   collection,
   onSnapshot,
+  getDocs,
+  writeBatch,
 } from 'firebase/firestore';
 import { db, testConnection, handleFirestoreError, OperationType, sanitizeForQuota } from './firebase';
 import {
@@ -26,6 +28,7 @@ import { store } from './store';
 class FirebaseSyncService {
   private isInitialized = false;
   private isConnected = false;
+  private syncStatus: Record<string, any> = {};
 
   public async init(): Promise<void> {
     if (this.isInitialized) return;
@@ -44,7 +47,30 @@ class FirebaseSyncService {
     }
   }
 
+  private isCollectionSynced(name: string): boolean {
+    if (this.syncStatus && this.syncStatus[`${name}_initialized`]) return true;
+    try {
+      return localStorage.getItem(`gs_synced_${name}`) === 'true';
+    } catch {
+      return false;
+    }
+  }
+
   private setupListeners(): void {
+    // 0. Sync Status Metadata Listener
+    const statusDocRef = doc(db, 'cms', 'sync_status');
+    onSnapshot(
+      statusDocRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          this.syncStatus = snapshot.data() || {};
+        }
+      },
+      () => {
+        // quiet ignore
+      }
+    );
+
     // 1. Sync CMS Settings from Firestore (Text & Link URLs)
     const cmsDocRef = doc(db, 'cms', 'settings');
     onSnapshot(
@@ -71,7 +97,7 @@ class FirebaseSyncService {
         snapshot.forEach((docSnap) => {
           remoteAnnouncements.push(docSnap.data() as Announcement);
         });
-        if (remoteAnnouncements.length > 0) {
+        if (remoteAnnouncements.length > 0 || this.isCollectionSynced('announcements')) {
           store.applyRemoteAnnouncements(remoteAnnouncements);
         }
       },
@@ -89,7 +115,7 @@ class FirebaseSyncService {
         snapshot.forEach((docSnap) => {
           remoteCourses.push(docSnap.data() as Course);
         });
-        if (remoteCourses.length > 0) {
+        if (remoteCourses.length > 0 || this.isCollectionSynced('courses')) {
           store.applyRemoteCourses(remoteCourses);
         }
       },
@@ -107,7 +133,7 @@ class FirebaseSyncService {
         snapshot.forEach((docSnap) => {
           remoteModules.push(docSnap.data() as CourseModule);
         });
-        if (remoteModules.length > 0) {
+        if (remoteModules.length > 0 || this.isCollectionSynced('modules')) {
           store.applyRemoteModules(remoteModules);
         }
       },
@@ -125,7 +151,7 @@ class FirebaseSyncService {
         snapshot.forEach((docSnap) => {
           remoteLessons.push(docSnap.data() as Lesson);
         });
-        if (remoteLessons.length > 0) {
+        if (remoteLessons.length > 0 || this.isCollectionSynced('lessons')) {
           store.applyRemoteLessons(remoteLessons);
         }
       },
@@ -143,7 +169,7 @@ class FirebaseSyncService {
         snapshot.forEach((docSnap) => {
           remoteDownloads.push(docSnap.data() as FileDownload);
         });
-        if (remoteDownloads.length > 0) {
+        if (remoteDownloads.length > 0 || this.isCollectionSynced('downloads')) {
           store.applyRemoteDownloads(remoteDownloads);
         }
       },
@@ -161,7 +187,7 @@ class FirebaseSyncService {
         snapshot.forEach((docSnap) => {
           remoteQuizzes.push(docSnap.data() as Quiz);
         });
-        if (remoteQuizzes.length > 0) {
+        if (remoteQuizzes.length > 0 || this.isCollectionSynced('quizzes')) {
           store.applyRemoteQuizzes(remoteQuizzes);
         }
       },
@@ -179,7 +205,7 @@ class FirebaseSyncService {
         snapshot.forEach((docSnap) => {
           remoteExamples.push(docSnap.data() as AppExample);
         });
-        if (remoteExamples.length > 0) {
+        if (remoteExamples.length > 0 || this.isCollectionSynced('examples')) {
           store.applyRemoteExamples(remoteExamples);
         }
       },
@@ -197,7 +223,7 @@ class FirebaseSyncService {
         snapshot.forEach((docSnap) => {
           remoteTestis.push(docSnap.data() as Testimonial);
         });
-        if (remoteTestis.length > 0) {
+        if (remoteTestis.length > 0 || this.isCollectionSynced('testimonials')) {
           store.applyRemoteTestimonials(remoteTestis);
         }
       },
@@ -215,7 +241,7 @@ class FirebaseSyncService {
         snapshot.forEach((docSnap) => {
           remoteFaqs.push(docSnap.data() as FaqItem);
         });
-        if (remoteFaqs.length > 0) {
+        if (remoteFaqs.length > 0 || this.isCollectionSynced('faqs')) {
           store.applyRemoteFaqs(remoteFaqs);
         }
       },
@@ -233,7 +259,7 @@ class FirebaseSyncService {
         snapshot.forEach((docSnap) => {
           remoteMembers.push(docSnap.data() as Member);
         });
-        if (remoteMembers.length > 0) {
+        if (remoteMembers.length > 0 || this.isCollectionSynced('members')) {
           store.applyRemoteMembers(remoteMembers);
         }
       },
@@ -251,7 +277,7 @@ class FirebaseSyncService {
         snapshot.forEach((docSnap) => {
           remoteContacts.push(docSnap.data() as ContactMessage);
         });
-        if (remoteContacts.length > 0) {
+        if (remoteContacts.length > 0 || this.isCollectionSynced('contact_messages')) {
           store.applyRemoteContacts(remoteContacts);
         }
       },
@@ -261,6 +287,133 @@ class FirebaseSyncService {
     );
   }
 
+  // --- COMMIT COLLECTION METHODS (Batch sync: writes modified/new docs and deletes removed docs) ---
+
+  public async commitCollection<T extends { id: string }>(
+    collectionName: string,
+    localItems: T[]
+  ): Promise<{ written: number; deleted: number }> {
+    try {
+      const colRef = collection(db, collectionName);
+      const snapshot = await getDocs(colRef);
+      const remoteIds = new Set<string>();
+      snapshot.forEach((d) => remoteIds.add(d.id));
+
+      const localIdSet = new Set<string>(localItems.map((item) => item.id));
+
+      const batch = writeBatch(db);
+      let writtenCount = 0;
+      let deletedCount = 0;
+
+      // 1. Delete items from Firestore that were deleted locally
+      for (const remoteId of remoteIds) {
+        if (!localIdSet.has(remoteId)) {
+          batch.delete(doc(db, collectionName, remoteId));
+          deletedCount++;
+        }
+      }
+
+      // 2. Write all local items
+      for (const item of localItems) {
+        const sanitized = sanitizeForQuota(item);
+        batch.set(
+          doc(db, collectionName, item.id),
+          { ...sanitized, updatedAt: new Date().toISOString() },
+          { merge: true }
+        );
+        writtenCount++;
+      }
+
+      // 3. Mark collection as initialized in cms/sync_status
+      const statusRef = doc(db, 'cms', 'sync_status');
+      batch.set(
+        statusRef,
+        {
+          [`${collectionName}_initialized`]: true,
+          [`${collectionName}_lastSynced`]: new Date().toISOString(),
+          [`${collectionName}_count`]: localItems.length,
+        },
+        { merge: true }
+      );
+
+      await batch.commit();
+
+      try {
+        localStorage.setItem(`gs_synced_${collectionName}`, 'true');
+      } catch {
+        // ignore
+      }
+
+      // Clear local dirty flag since this collection is now synced with Firebase
+      store.clearDirty(collectionName);
+      if (collectionName === 'modules' || collectionName === 'lessons') {
+        store.clearDirty('modules_lessons');
+      }
+      if (collectionName === 'contact_messages') {
+        store.clearDirty('contacts');
+      }
+      if (collectionName === 'faqs') {
+        store.clearDirty('faq');
+      }
+
+      return { written: writtenCount, deleted: deletedCount };
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, collectionName);
+      return { written: 0, deleted: 0 };
+    }
+  }
+
+  // --- SPECIFIC SECTION SYNC METHODS (Triggered ONLY via "Simpan ke Firebase" buttons) ---
+
+  public async syncCoursesToFirebase(courses: Course[]): Promise<{ written: number; deleted: number }> {
+    return this.commitCollection('courses', courses);
+  }
+
+  public async syncModulesAndLessonsToFirebase(
+    modules: CourseModule[],
+    lessons: Lesson[]
+  ): Promise<{ written: number; deleted: number }> {
+    const resMod = await this.commitCollection('modules', modules);
+    const resLes = await this.commitCollection('lessons', lessons);
+    store.clearDirty('modules_lessons');
+    return {
+      written: resMod.written + resLes.written,
+      deleted: resMod.deleted + resLes.deleted,
+    };
+  }
+
+  public async syncDownloadsToFirebase(downloads: FileDownload[]): Promise<{ written: number; deleted: number }> {
+    return this.commitCollection('downloads', downloads);
+  }
+
+  public async syncQuizzesToFirebase(quizzes: Quiz[]): Promise<{ written: number; deleted: number }> {
+    return this.commitCollection('quizzes', quizzes);
+  }
+
+  public async syncMembersToFirebase(members: Member[]): Promise<{ written: number; deleted: number }> {
+    return this.commitCollection('members', members);
+  }
+
+  public async syncExamplesToFirebase(examples: AppExample[]): Promise<{ written: number; deleted: number }> {
+    return this.commitCollection('examples', examples);
+  }
+
+  public async syncTestimonialsToFirebase(testimonials: Testimonial[]): Promise<{ written: number; deleted: number }> {
+    return this.commitCollection('testimonials', testimonials);
+  }
+
+  public async syncFaqsToFirebase(faqs: FaqItem[]): Promise<{ written: number; deleted: number }> {
+    return this.commitCollection('faqs', faqs);
+  }
+
+  public async syncAnnouncementsToFirebase(announcements: Announcement[]): Promise<{ written: number; deleted: number }> {
+    return this.commitCollection('announcements', announcements);
+  }
+
+  public async syncContactsToFirebase(contacts: ContactMessage[]): Promise<{ written: number; deleted: number }> {
+    return this.commitCollection('contact_messages', contacts);
+  }
+
   // --- WRITE METHODS (Text & Links only, stripped of base64 to save quota) ---
 
   public async syncCMS(cmsData: CMSSettings): Promise<void> {
@@ -268,9 +421,14 @@ class FirebaseSyncService {
       const sanitized = sanitizeForQuota(cmsData);
       const docRef = doc(db, 'cms', 'settings');
       await setDoc(docRef, { ...sanitized, updatedAt: new Date().toISOString() }, { merge: true });
+      store.clearDirty('cms');
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'cms/settings');
     }
+  }
+
+  public async syncCMSToFirebase(cmsData: CMSSettings): Promise<void> {
+    return this.syncCMS(cmsData);
   }
 
   public async syncCourse(course: Course): Promise<void> {
@@ -486,76 +644,11 @@ class FirebaseSyncService {
 
 export const firebaseSync = new FirebaseSyncService();
 
-// Hook store mutations to Firebase Sync
+// NOTE: Auto-sync on individual store mutations is intentionally disabled
+// to conserve Firebase quota and ensure data is synced ONLY when clicking "Simpan ke Firebase".
 store.setSyncHandlers({
-  syncCMS: (cms) => {
-    firebaseSync.syncCMS(cms).catch((e) => console.warn('Sync CMS warning:', e));
-  },
-  syncCourse: (course) => {
-    firebaseSync.syncCourse(course).catch((e) => console.warn('Sync Course warning:', e));
-  },
-  deleteCourse: (id) => {
-    firebaseSync.deleteCourse(id).catch((e) => console.warn('Delete Course warning:', e));
-  },
-  syncModule: (mod) => {
-    firebaseSync.syncModule(mod).catch((e) => console.warn('Sync Module warning:', e));
-  },
-  deleteModule: (id) => {
-    firebaseSync.deleteModule(id).catch((e) => console.warn('Delete Module warning:', e));
-  },
-  syncLesson: (lesson) => {
-    firebaseSync.syncLesson(lesson).catch((e) => console.warn('Sync Lesson warning:', e));
-  },
-  deleteLesson: (id) => {
-    firebaseSync.deleteLesson(id).catch((e) => console.warn('Delete Lesson warning:', e));
-  },
-  syncDownload: (file) => {
-    firebaseSync.syncDownload(file).catch((e) => console.warn('Sync Download warning:', e));
-  },
-  deleteDownload: (id) => {
-    firebaseSync.deleteDownload(id).catch((e) => console.warn('Delete Download warning:', e));
-  },
-  syncQuiz: (quiz) => {
-    firebaseSync.syncQuiz(quiz).catch((e) => console.warn('Sync Quiz warning:', e));
-  },
-  deleteQuiz: (id) => {
-    firebaseSync.deleteQuiz(id).catch((e) => console.warn('Delete Quiz warning:', e));
-  },
-  syncAnnouncement: (ann) => {
-    firebaseSync.syncAnnouncement(ann).catch((e) => console.warn('Sync Announcement warning:', e));
-  },
-  deleteAnnouncement: (id) => {
-    firebaseSync.deleteAnnouncement(id).catch((e) => console.warn('Delete Announcement warning:', e));
-  },
-  syncAppExample: (example) => {
-    firebaseSync.syncAppExample(example).catch((e) => console.warn('Sync Example warning:', e));
-  },
-  deleteAppExample: (id) => {
-    firebaseSync.deleteAppExample(id).catch((e) => console.warn('Delete Example warning:', e));
-  },
-  syncTestimonial: (testi) => {
-    firebaseSync.syncTestimonial(testi).catch((e) => console.warn('Sync Testimonial warning:', e));
-  },
-  deleteTestimonial: (id) => {
-    firebaseSync.deleteTestimonial(id).catch((e) => console.warn('Delete Testimonial warning:', e));
-  },
-  syncFaq: (faq) => {
-    firebaseSync.syncFaq(faq).catch((e) => console.warn('Sync FAQ warning:', e));
-  },
-  deleteFaq: (id) => {
-    firebaseSync.deleteFaq(id).catch((e) => console.warn('Delete FAQ warning:', e));
-  },
-  syncMember: (m) => {
-    firebaseSync.syncMember(m).catch((e) => console.warn('Sync Member warning:', e));
-  },
-  deleteMember: (id) => {
-    firebaseSync.deleteMember(id).catch((e) => console.warn('Delete Member warning:', e));
-  },
-  syncProgress: (p) => {
-    firebaseSync.syncProgress(p).catch((e) => console.warn('Sync Progress warning:', e));
-  },
-  syncContactMessage: (msg) => {
-    firebaseSync.syncContactMessage(msg).catch((e) => console.warn('Sync Contact warning:', e));
+  syncCMS: (cmsData) => {
+    firebaseSync.syncCMSToFirebase(cmsData);
   },
 });
 

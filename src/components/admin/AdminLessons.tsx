@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Course, CourseModule, Lesson, ContentBlock, BlockType, StepItem } from '../../types';
 import { ImageUploader } from '../common/ImageUploader';
 import { FileUploader } from '../common/FileUploader';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { generateId } from '../../utils/crypto';
+import { firebaseSync } from '../../services/firebaseSync';
+import { store } from '../../services/store';
 import {
   Plus,
   Edit2,
@@ -20,6 +22,7 @@ import {
   Link,
   Image as ImageIcon,
   Check,
+  CloudUpload,
 } from 'lucide-react';
 
 interface AdminLessonsProps {
@@ -64,6 +67,29 @@ export const AdminLessons: React.FC<AdminLessonsProps> = ({
   // Delete targets
   const [deleteLessonId, setDeleteLessonId] = useState<string | null>(null);
   const [deleteModuleId, setDeleteModuleId] = useState<string | null>(null);
+  const [isSyncingFirebase, setIsSyncingFirebase] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(store.isDirty('modules_lessons'));
+
+  useEffect(() => {
+    return store.subscribe(() => {
+      setHasUnsavedChanges(store.isDirty('modules_lessons'));
+    });
+  }, []);
+
+  const handleSaveToFirebase = async () => {
+    setIsSyncingFirebase(true);
+    try {
+      const res = await firebaseSync.syncModulesAndLessonsToFirebase(modules, lessons);
+      store.clearDirty('modules_lessons');
+      setHasUnsavedChanges(false);
+      onToast(`Berhasil menyimpan ke Firebase! (${res.written} modul & pelajaran tersimpan, ${res.deleted} terhapus)`);
+    } catch (err: any) {
+      console.error(err);
+      onToast('Gagal menyimpan ke Firebase', 'error');
+    } finally {
+      setIsSyncingFirebase(false);
+    }
+  };
 
   const courseModules = modules
     .filter((m) => m.courseId === selectedCourseId)
@@ -103,7 +129,8 @@ export const AdminLessons: React.FC<AdminLessonsProps> = ({
   const handleDuplicate = (lessonId: string) => {
     const copy = onDuplicateLesson(lessonId);
     if (copy) {
-      onToast('Pelajaran berhasil diduplikasi');
+      setHasUnsavedChanges(true);
+      onToast('Pelajaran berhasil diduplikasi di lokal');
     }
   };
 
@@ -126,7 +153,8 @@ export const AdminLessons: React.FC<AdminLessonsProps> = ({
 
     onSaveLesson(payload);
     setIsEditingLesson(false);
-    onToast('Pelajaran berhasil disimpan');
+    setHasUnsavedChanges(true);
+    onToast('Pelajaran disimpan ke lokal. Tekan "Simpan ke Firebase" untuk menyimpan ke cloud.');
   };
 
   const handleSaveNewModule = (e: React.FormEvent) => {
@@ -143,7 +171,8 @@ export const AdminLessons: React.FC<AdminLessonsProps> = ({
     setSelectedModuleId(mod.id);
     setNewModuleTitle('');
     setIsAddingModule(false);
-    onToast('Modul berhasil ditambahkan');
+    setHasUnsavedChanges(true);
+    onToast('Modul disimpan ke lokal. Tekan "Simpan ke Firebase" untuk menyimpan ke cloud.');
   };
 
   // Block management
@@ -215,12 +244,32 @@ export const AdminLessons: React.FC<AdminLessonsProps> = ({
     <div className="space-y-6">
       {/* Header & Course Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-          Modul & Pelajaran
-        </h2>
+        <div>
+          <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
+            Modul & Pelajaran
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Perubahan baru tersimpan di lokal sampai Anda menekan tombol Simpan ke Firebase.
+          </p>
+        </div>
 
-        {!isEditingLesson && (
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSaveToFirebase}
+            disabled={isSyncingFirebase}
+            className={`h-10 px-4 text-xs sm:text-sm font-semibold text-white rounded-[12px] flex items-center gap-2 shadow-xs transition-all shrink-0 ${
+              hasUnsavedChanges
+                ? 'bg-[#FF7A1A] hover:bg-[#E56A10] ring-2 ring-[#FF7A1A]/40'
+                : 'bg-[#0B2A5B] hover:bg-[#1E4FA8]'
+            } disabled:opacity-75`}
+            title="Simpan seluruh modul & pelajaran ke Firebase Firestore"
+          >
+            <CloudUpload className={`w-4 h-4 ${isSyncingFirebase ? 'animate-bounce' : 'text-[#FF7A1A]'}`} />
+            <span>{isSyncingFirebase ? 'Menyimpan ke Cloud...' : 'Simpan ke Firebase'}</span>
+          </button>
+
+          {!isEditingLesson && (
             <select
               value={selectedCourseId}
               onChange={(e) => {
@@ -235,9 +284,27 @@ export const AdminLessons: React.FC<AdminLessonsProps> = ({
                 </option>
               ))}
             </select>
-          </div>
-        )}
+          )}
+        </div>
       </div>
+
+      {hasUnsavedChanges && (
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-[12px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-200">
+          <div className="flex items-center gap-2">
+            <span className="text-base">⚠️</span>
+            <span>Ada perubahan modul atau pelajaran (tambah/ubah/hapus) di lokal perangkat ini. Tekan tombol <strong>"Simpan ke Firebase"</strong> di kanan atas agar tersimpan permanen di cloud dan terlihat di perangkat lain.</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSaveToFirebase}
+            disabled={isSyncingFirebase}
+            className="h-8 px-3 text-xs font-bold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-lg shrink-0 flex items-center gap-1.5 shadow-xs"
+          >
+            <CloudUpload className="w-3.5 h-3.5" />
+            Simpan Sekarang
+          </button>
+        </div>
+      )}
 
       {isEditingLesson ? (
         /* Lesson Block Editor Form */
@@ -769,7 +836,8 @@ export const AdminLessons: React.FC<AdminLessonsProps> = ({
           if (deleteLessonId) {
             onDeleteLesson(deleteLessonId);
             setDeleteLessonId(null);
-            onToast('Pelajaran berhasil dihapus');
+            setHasUnsavedChanges(true);
+            onToast('Pelajaran dihapus dari lokal. Tekan "Simpan ke Firebase" untuk memperbarui database cloud.');
           }
         }}
         onCancel={() => setDeleteLessonId(null)}
@@ -784,7 +852,8 @@ export const AdminLessons: React.FC<AdminLessonsProps> = ({
           if (deleteModuleId) {
             onDeleteModule(deleteModuleId);
             setDeleteModuleId(null);
-            onToast('Modul berhasil dihapus');
+            setHasUnsavedChanges(true);
+            onToast('Modul dihapus dari lokal. Tekan "Simpan ke Firebase" untuk memperbarui database cloud.');
           }
         }}
         onCancel={() => setDeleteModuleId(null)}

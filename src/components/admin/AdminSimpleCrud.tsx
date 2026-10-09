@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppExample, Testimonial, FaqItem, Announcement, ContactMessage, FileSource } from '../../types';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { ImageUploader } from '../common/ImageUploader';
 import { generateId, formatDate } from '../../utils/crypto';
-import { Plus, Edit2, Trash2, Eye, EyeOff, Search, Star, MessageSquare, LayoutGrid } from 'lucide-react';
+import { firebaseSync } from '../../services/firebaseSync';
+import { store } from '../../services/store';
+import { Plus, Edit2, Trash2, Eye, EyeOff, Search, Star, MessageSquare, LayoutGrid, CloudUpload } from 'lucide-react';
 
 interface AdminSimpleCrudProps {
   type: 'examples' | 'testimonials' | 'faq' | 'announcements' | 'contacts';
@@ -48,6 +50,41 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [isSyncingFirebase, setIsSyncingFirebase] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(store.isDirty(type));
+
+  useEffect(() => {
+    setHasUnsavedChanges(store.isDirty(type));
+    return store.subscribe(() => {
+      setHasUnsavedChanges(store.isDirty(type));
+    });
+  }, [type]);
+
+  const handleSaveToFirebase = async () => {
+    setIsSyncingFirebase(true);
+    try {
+      let res = { written: 0, deleted: 0 };
+      if (type === 'examples') {
+        res = await firebaseSync.syncExamplesToFirebase(appExamples);
+      } else if (type === 'testimonials') {
+        res = await firebaseSync.syncTestimonialsToFirebase(testimonials);
+      } else if (type === 'faq') {
+        res = await firebaseSync.syncFaqsToFirebase(faq);
+      } else if (type === 'announcements') {
+        res = await firebaseSync.syncAnnouncementsToFirebase(announcements);
+      } else if (type === 'contacts') {
+        res = await firebaseSync.syncContactsToFirebase(contacts);
+      }
+      store.clearDirty(type);
+      setHasUnsavedChanges(false);
+      onToast(`Berhasil menyimpan ${getTitle()} ke Firebase! (${res.written} disimpan, ${res.deleted} dihapus)`);
+    } catch (err: any) {
+      console.error(err);
+      onToast('Gagal menyimpan ke Firebase', 'error');
+    } finally {
+      setIsSyncingFirebase(false);
+    }
+  };
 
   // Generic form fields
   const [field1, setField1] = useState(''); // name / question / title
@@ -175,20 +212,60 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-          Kelola {getTitle()}
-        </h2>
+        <div>
+          <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
+            Kelola {getTitle()}
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Perubahan hanya tersimpan di lokal sampai Anda menekan tombol Simpan ke Firebase.
+          </p>
+        </div>
 
-        {!isEditing && type !== 'contacts' && (
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={handleOpenAdd}
-            className="h-10 px-4 text-xs sm:text-sm font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center gap-1.5 shadow-xs"
+            type="button"
+            onClick={handleSaveToFirebase}
+            disabled={isSyncingFirebase}
+            className={`h-10 px-4 text-xs sm:text-sm font-semibold text-white rounded-[12px] flex items-center gap-2 shadow-xs transition-all shrink-0 ${
+              hasUnsavedChanges
+                ? 'bg-[#FF7A1A] hover:bg-[#E56A10] ring-2 ring-[#FF7A1A]/40'
+                : 'bg-[#0B2A5B] hover:bg-[#1E4FA8]'
+            } disabled:opacity-75`}
+            title={`Simpan seluruh ${getTitle()} ke Firebase Firestore`}
           >
-            <Plus className="w-4 h-4" />
-            Tambah Data
+            <CloudUpload className={`w-4 h-4 ${isSyncingFirebase ? 'animate-bounce' : 'text-[#FF7A1A]'}`} />
+            <span>{isSyncingFirebase ? 'Menyimpan...' : 'Simpan ke Firebase'}</span>
           </button>
-        )}
+
+          {!isEditing && type !== 'contacts' && (
+            <button
+              onClick={handleOpenAdd}
+              className="h-10 px-4 text-xs sm:text-sm font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center gap-1.5 shadow-xs"
+            >
+              <Plus className="w-4 h-4" />
+              Tambah Data
+            </button>
+          )}
+        </div>
       </div>
+
+      {hasUnsavedChanges && (
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-[12px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-200">
+          <div className="flex items-center gap-2">
+            <span className="text-base">⚠️</span>
+            <span>Ada perubahan {getTitle().toLowerCase()} (tambah/ubah/hapus) di lokal perangkat ini. Tekan tombol <strong>"Simpan ke Firebase"</strong> di kanan atas agar tersimpan permanen di cloud dan terlihat di perangkat lain.</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSaveToFirebase}
+            disabled={isSyncingFirebase}
+            className="h-8 px-3 text-xs font-bold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-lg shrink-0 flex items-center gap-1.5 shadow-xs"
+          >
+            <CloudUpload className="w-3.5 h-3.5" />
+            Simpan Sekarang
+          </button>
+        </div>
+      )}
 
       {isEditing ? (
         /* Dynamic editor form */

@@ -13,6 +13,8 @@ import { AdminBackup } from './AdminBackup';
 import { AdminFirebaseQuota } from './AdminFirebaseQuota';
 import { AdminLogs } from './AdminLogs';
 import { AdminPassword } from './AdminPassword';
+import { firebaseSync } from '../../services/firebaseSync';
+import { store } from '../../services/store';
 import {
   LayoutDashboard,
   BookOpen,
@@ -46,6 +48,7 @@ import {
   MapPin,
   Phone,
   Eye,
+  CloudUpload,
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -131,6 +134,96 @@ export const AdminLayout: React.FC<AdminLayoutProps> = (props) => {
   });
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const sidebarDrawerRef = useRef<HTMLDivElement>(null);
+
+  const [dirtyCollections, setDirtyCollections] = useState<string[]>(() => store.getDirtyCollections());
+  const [isGlobalSyncing, setIsGlobalSyncing] = useState(false);
+
+  useEffect(() => {
+    return store.subscribe(() => {
+      setDirtyCollections(store.getDirtyCollections());
+    });
+  }, []);
+
+  const getCollectionNameInIndonesian = (col: string): string => {
+    switch (col) {
+      case 'courses': return 'Kelas';
+      case 'modules_lessons': return 'Modul & Pelajaran';
+      case 'downloads': return 'File Download';
+      case 'quizzes': return 'Kuis';
+      case 'members': return 'Member';
+      case 'examples': return 'Contoh Aplikasi';
+      case 'testimonials': return 'Testimoni';
+      case 'faq': return 'Tanya Jawab';
+      case 'announcements': return 'Pengumuman';
+      case 'contacts': return 'Pesan Kontak';
+      case 'cms': return 'Pengaturan Tampilan';
+      default: return col;
+    }
+  };
+
+  const handleSaveAllDirtyToFirebase = async () => {
+    setIsGlobalSyncing(true);
+    try {
+      const list = store.getDirtyCollections();
+      let totalWritten = 0;
+      let totalDeleted = 0;
+
+      for (const col of list) {
+        if (col === 'courses') {
+          const res = await firebaseSync.syncCoursesToFirebase(props.courses);
+          totalWritten += res.written;
+          totalDeleted += res.deleted;
+        } else if (col === 'modules_lessons') {
+          const res = await firebaseSync.syncModulesAndLessonsToFirebase(props.modules, props.lessons);
+          totalWritten += res.written;
+          totalDeleted += res.deleted;
+        } else if (col === 'downloads') {
+          const res = await firebaseSync.syncDownloadsToFirebase(props.files);
+          totalWritten += res.written;
+          totalDeleted += res.deleted;
+        } else if (col === 'quizzes') {
+          const res = await firebaseSync.syncQuizzesToFirebase(props.quizzes);
+          totalWritten += res.written;
+          totalDeleted += res.deleted;
+        } else if (col === 'members') {
+          const res = await firebaseSync.syncMembersToFirebase(props.members);
+          totalWritten += res.written;
+          totalDeleted += res.deleted;
+        } else if (col === 'examples') {
+          const res = await firebaseSync.syncExamplesToFirebase(props.appExamples);
+          totalWritten += res.written;
+          totalDeleted += res.deleted;
+        } else if (col === 'testimonials') {
+          const res = await firebaseSync.syncTestimonialsToFirebase(props.testimonials);
+          totalWritten += res.written;
+          totalDeleted += res.deleted;
+        } else if (col === 'faq') {
+          const res = await firebaseSync.syncFaqsToFirebase(props.faq);
+          totalWritten += res.written;
+          totalDeleted += res.deleted;
+        } else if (col === 'announcements') {
+          const res = await firebaseSync.syncAnnouncementsToFirebase(props.announcements);
+          totalWritten += res.written;
+          totalDeleted += res.deleted;
+        } else if (col === 'contacts') {
+          const res = await firebaseSync.syncContactsToFirebase(props.contacts);
+          totalWritten += res.written;
+          totalDeleted += res.deleted;
+        } else if (col === 'cms') {
+          await firebaseSync.syncCMSToFirebase(props.cms);
+          totalWritten += 1;
+        }
+      }
+
+      store.clearAllDirty();
+      onToast(`Berhasil menyimpan seluruh perubahan ke Firebase! (${totalWritten} disimpan, ${totalDeleted} dihapus)`, 'success');
+    } catch (err: any) {
+      console.error(err);
+      onToast('Gagal menyimpan ke Firebase', 'error');
+    } finally {
+      setIsGlobalSyncing(false);
+    }
+  };
 
   const isSuperadmin = role === 'Superadmin';
 
@@ -669,6 +762,42 @@ export const AdminLayout: React.FC<AdminLayoutProps> = (props) => {
           )}
         </main>
       </div>
+
+      {/* Global Floating Save Bar (Shown whenever any changes are unsaved in local store) */}
+      {dirtyCollections.length > 0 && (
+        <aside
+          aria-label="Notifikasi sinkronisasi cloud"
+          className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-xl z-50 bg-[#0B2A5B] text-white p-4 rounded-[16px] shadow-2xl border-2 border-[#FF7A1A] flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom duration-300"
+        >
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="w-10 h-10 rounded-xl bg-[#FF7A1A]/20 flex items-center justify-center text-[#FF7A1A] shrink-0">
+              <CloudUpload className={`w-5 h-5 ${isGlobalSyncing ? 'animate-bounce' : 'animate-pulse'}`} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs sm:text-sm font-bold flex items-center gap-2 flex-wrap">
+                <span>Perubahan Belum Disimpan ke Firebase!</span>
+                <span className="text-[10px] uppercase tracking-wider bg-[#FF7A1A] text-white px-2 py-0.5 rounded-full font-black">
+                  {dirtyCollections.length} Bagian
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 mt-0.5 line-clamp-1">
+                Ada perubahan di: {dirtyCollections.map(getCollectionNameInIndonesian).join(', ')}. Klik Simpan agar tersinkronisasi ke cloud.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+            <button
+              type="button"
+              onClick={handleSaveAllDirtyToFirebase}
+              disabled={isGlobalSyncing}
+              className="w-full sm:w-auto h-9 px-4 text-xs font-bold text-white bg-[#FF7A1A] hover:bg-[#E56A10] active:scale-95 rounded-[10px] flex items-center justify-center gap-2 shadow-md transition-all disabled:opacity-50 cursor-pointer"
+            >
+              <CloudUpload className={`w-3.5 h-3.5 ${isGlobalSyncing ? 'animate-spin' : ''}`} />
+              <span>{isGlobalSyncing ? 'Menyimpan...' : 'Simpan ke Firebase Sekarang'}</span>
+            </button>
+          </div>
+        </aside>
+      )}
     </div>
   );
 };

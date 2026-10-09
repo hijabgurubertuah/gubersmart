@@ -88,6 +88,8 @@ const STORAGE_KEYS = {
   LOGS: 'gs_logs_v1',
   PASSWORDS: 'gs_passwords_v1',
   AUTH: 'gs_auth_v1',
+  DIRTY_COLLECTIONS: 'gs_dirty_collections_v1',
+  MIGRATED_V2: 'gs_migrated_v2',
 };
 
 const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
@@ -112,6 +114,9 @@ class StoreManager {
   private syncHandlers?: StoreSyncHandlers;
   private version: number = 1;
 
+  private dirtyCollections: Set<string> = new Set();
+  private pendingRemote: Record<string, any> = {};
+
   private listeners: Set<() => void> = new Set();
   private inactivityTimer: any = null;
 
@@ -121,6 +126,105 @@ class StoreManager {
 
   public setSyncHandlers(handlers: StoreSyncHandlers): void {
     this.syncHandlers = handlers;
+  }
+
+  // --- Dirty Tracking Methods ---
+  public isDirty(collection: string): boolean {
+    return this.dirtyCollections.has(collection);
+  }
+
+  public setDirty(collection: string, dirty: boolean = true): void {
+    if (dirty) {
+      this.dirtyCollections.add(collection);
+    } else {
+      this.dirtyCollections.delete(collection);
+      delete this.pendingRemote[collection];
+    }
+    this.save(STORAGE_KEYS.DIRTY_COLLECTIONS, Array.from(this.dirtyCollections));
+    this.notify();
+  }
+
+  public clearDirty(collection: string): void {
+    this.setDirty(collection, false);
+  }
+
+  public clearAllDirty(): void {
+    this.dirtyCollections.clear();
+    this.pendingRemote = {};
+    this.save(STORAGE_KEYS.DIRTY_COLLECTIONS, []);
+    this.notify();
+  }
+
+  public hasAnyDirty(): boolean {
+    return this.dirtyCollections.size > 0;
+  }
+
+  public getDirtyCollections(): string[] {
+    return Array.from(this.dirtyCollections);
+  }
+
+  public getPendingRemote(collection: string): any {
+    return this.pendingRemote[collection];
+  }
+
+  public revertToRemote(collection: string): void {
+    const remote = this.pendingRemote[collection];
+    if (remote) {
+      switch (collection) {
+        case 'courses':
+          this.courses = [...remote].sort((a, b) => (a.order || 0) - (b.order || 0));
+          this.save(STORAGE_KEYS.COURSES, this.courses);
+          break;
+        case 'modules_lessons':
+          if (remote.modules) {
+            this.modules = [...remote.modules].sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+            this.save(STORAGE_KEYS.MODULES, this.modules);
+          }
+          if (remote.lessons) {
+            this.lessons = [...remote.lessons].sort((a: any, b: any) => (a.order || 0) - (b.order || 0));
+            this.save(STORAGE_KEYS.LESSONS, this.lessons);
+          }
+          break;
+        case 'downloads':
+          this.downloads = [...remote];
+          this.save(STORAGE_KEYS.DOWNLOADS, this.downloads);
+          break;
+        case 'quizzes':
+          this.quizzes = [...remote];
+          this.save(STORAGE_KEYS.QUIZZES, this.quizzes);
+          break;
+        case 'members':
+          this.members = [...remote];
+          this.save(STORAGE_KEYS.MEMBERS, this.members);
+          break;
+        case 'examples':
+          this.appExamples = [...remote].sort((a, b) => (a.order || 0) - (b.order || 0));
+          this.save(STORAGE_KEYS.APP_EXAMPLES, this.appExamples);
+          break;
+        case 'testimonials':
+          this.testimonials = [...remote];
+          this.save(STORAGE_KEYS.TESTIMONIALS, this.testimonials);
+          break;
+        case 'faq':
+          this.faq = [...remote].sort((a, b) => (a.order || 0) - (b.order || 0));
+          this.save(STORAGE_KEYS.FAQ, this.faq);
+          break;
+        case 'announcements':
+          this.announcements = [...remote].sort((a, b) => (a.order || 0) - (b.order || 0));
+          this.save(STORAGE_KEYS.ANNOUNCEMENTS, this.announcements);
+          break;
+        case 'contacts':
+          this.contacts = [...remote];
+          this.save(STORAGE_KEYS.CONTACTS, this.contacts);
+          break;
+        case 'cms':
+          this.cms = { ...this.cms, ...remote };
+          this.save(STORAGE_KEYS.CMS, this.cms);
+          break;
+      }
+    }
+    this.clearDirty(collection);
+    this.notify();
   }
 
   constructor() {
@@ -151,17 +255,21 @@ class StoreManager {
       this.cms.identity.heroSubtitle = INITIAL_CMS_SETTINGS.identity.heroSubtitle;
     }
     this.courses = this.load(STORAGE_KEYS.COURSES, INITIAL_COURSES);
-    const course1 = this.courses.find((c) => c.id === 'course_1');
-    if (course1 && (course1.name === 'Bikin Website Tanpa Koding' || course1.price === 149000)) {
-      course1.name = INITIAL_COURSES[0].name;
-      course1.headline = INITIAL_COURSES[0].headline;
-      course1.summary = INITIAL_COURSES[0].summary;
-      course1.description = INITIAL_COURSES[0].description;
-      course1.price = INITIAL_COURSES[0].price;
-      course1.promoNotice = INITIAL_COURSES[0].promoNotice;
-      course1.whatYouWillLearn = INITIAL_COURSES[0].whatYouWillLearn;
-      course1.targetAudience = INITIAL_COURSES[0].targetAudience;
-      this.save(STORAGE_KEYS.COURSES, this.courses);
+    const hasMigrated = this.load(STORAGE_KEYS.MIGRATED_V2, false);
+    if (!hasMigrated) {
+      const course1 = this.courses.find((c) => c.id === 'course_1');
+      if (course1 && (course1.name === 'Bikin Website Tanpa Koding' || course1.price === 149000)) {
+        course1.name = INITIAL_COURSES[0].name;
+        course1.headline = INITIAL_COURSES[0].headline;
+        course1.summary = INITIAL_COURSES[0].summary;
+        course1.description = INITIAL_COURSES[0].description;
+        course1.price = INITIAL_COURSES[0].price;
+        course1.promoNotice = INITIAL_COURSES[0].promoNotice;
+        course1.whatYouWillLearn = INITIAL_COURSES[0].whatYouWillLearn;
+        course1.targetAudience = INITIAL_COURSES[0].targetAudience;
+        this.save(STORAGE_KEYS.COURSES, this.courses);
+      }
+      this.save(STORAGE_KEYS.MIGRATED_V2, true);
     }
     this.modules = this.load(STORAGE_KEYS.MODULES, INITIAL_MODULES);
     this.lessons = this.load(STORAGE_KEYS.LESSONS, INITIAL_LESSONS);
@@ -183,6 +291,8 @@ class StoreManager {
       role: 'Publik',
       lastActive: Date.now(),
     });
+
+    this.dirtyCollections = new Set(this.load<string[]>(STORAGE_KEYS.DIRTY_COLLECTIONS, []));
 
     this.initInactivityListener();
   }
@@ -386,6 +496,7 @@ class StoreManager {
   public updateCMS(updates: Partial<CMSSettings>): void {
     this.cms = { ...this.cms, ...updates };
     this.save(STORAGE_KEYS.CMS, this.cms);
+    this.setDirty('cms');
     this.syncHandlers?.syncCMS?.(this.cms);
     this.addLog(this.auth.role, 'Memperbarui pengaturan CMS');
     this.notify();
@@ -400,11 +511,17 @@ class StoreManager {
       },
     };
     this.save(STORAGE_KEYS.CMS, this.cms);
+    this.setDirty('cms');
     this.syncHandlers?.syncCMS?.(this.cms);
     this.notify();
   }
 
   public applyRemoteCMS(remoteCms: Partial<CMSSettings>): void {
+    if (this.isDirty('cms')) {
+      this.pendingRemote['cms'] = remoteCms;
+      this.notify();
+      return;
+    }
     const mergedIdentity = {
       ...this.cms.identity,
       ...(remoteCms.identity || {}),
@@ -430,121 +547,126 @@ class StoreManager {
   }
 
   public applyRemoteAnnouncements(remoteAnnouncements: Announcement[]): void {
-    if (remoteAnnouncements.length > 0) {
-      this.announcements = remoteAnnouncements;
-      this.save(STORAGE_KEYS.ANNOUNCEMENTS, this.announcements);
+    if (this.isDirty('announcements')) {
+      this.pendingRemote['announcements'] = remoteAnnouncements;
       this.notify();
+      return;
     }
+    this.announcements = [...remoteAnnouncements];
+    this.save(STORAGE_KEYS.ANNOUNCEMENTS, this.announcements);
+    this.notify();
   }
 
   public applyRemoteCourses(remoteCourses: Course[]): void {
-    if (remoteCourses.length > 0) {
-      const remoteMap = new Map<string, Course>(remoteCourses.map((rc) => [rc.id, rc]));
-
-      const updatedCourses = this.courses.map((existing) => {
-        const remote = remoteMap.get(existing.id);
-        if (remote) {
-          remoteMap.delete(existing.id);
-          return {
-            ...remote,
-            coverValue: (remote.coverValue && remote.coverValue.trim() !== '') ? remote.coverValue : (existing.coverValue || ''),
-          };
-        }
-        return existing;
-      });
-
-      remoteMap.forEach((newRemote) => {
-        updatedCourses.push(newRemote);
-      });
-
-      this.courses = updatedCourses.sort((a, b) => (a.order || 0) - (b.order || 0));
-      this.save(STORAGE_KEYS.COURSES, this.courses);
+    if (this.isDirty('courses')) {
+      this.pendingRemote['courses'] = remoteCourses;
       this.notify();
+      return;
     }
+    this.courses = [...remoteCourses].sort((a, b) => (a.order || 0) - (b.order || 0));
+    this.save(STORAGE_KEYS.COURSES, this.courses);
+    this.notify();
   }
 
   public applyRemoteExamples(remoteExamples: AppExample[]): void {
-    if (remoteExamples.length > 0) {
-      this.appExamples = remoteExamples.map((re) => {
-        const existing = this.appExamples.find((e) => e.id === re.id);
-        return {
-          ...re,
-          imageUrl: (re.imageUrl && re.imageUrl.trim() !== '') ? re.imageUrl : (existing?.imageUrl || ''),
-        };
-      });
-      this.save(STORAGE_KEYS.APP_EXAMPLES, this.appExamples);
+    if (this.isDirty('examples')) {
+      this.pendingRemote['examples'] = remoteExamples;
       this.notify();
+      return;
     }
+    this.appExamples = [...remoteExamples].sort((a, b) => (a.order || 0) - (b.order || 0));
+    this.save(STORAGE_KEYS.APP_EXAMPLES, this.appExamples);
+    this.notify();
   }
 
   public applyRemoteTestimonials(remoteTestis: Testimonial[]): void {
-    if (remoteTestis.length > 0) {
-      this.testimonials = remoteTestis.map((rt) => {
-        const existing = this.testimonials.find((t) => t.id === rt.id);
-        return {
-          ...rt,
-          avatarUrl: (rt.avatarUrl && rt.avatarUrl.trim() !== '') ? rt.avatarUrl : (existing?.avatarUrl || ''),
-        };
-      });
-      this.save(STORAGE_KEYS.TESTIMONIALS, this.testimonials);
+    if (this.isDirty('testimonials')) {
+      this.pendingRemote['testimonials'] = remoteTestis;
       this.notify();
+      return;
     }
+    this.testimonials = [...remoteTestis];
+    this.save(STORAGE_KEYS.TESTIMONIALS, this.testimonials);
+    this.notify();
   }
 
   public applyRemoteFaqs(remoteFaqs: FaqItem[]): void {
-    if (remoteFaqs.length > 0) {
-      this.faq = remoteFaqs;
-      this.save(STORAGE_KEYS.FAQ, this.faq);
+    if (this.isDirty('faq')) {
+      this.pendingRemote['faq'] = remoteFaqs;
       this.notify();
+      return;
     }
+    this.faq = [...remoteFaqs].sort((a, b) => (a.order || 0) - (b.order || 0));
+    this.save(STORAGE_KEYS.FAQ, this.faq);
+    this.notify();
   }
 
   public applyRemoteModules(remoteModules: CourseModule[]): void {
-    if (remoteModules.length > 0) {
-      this.modules = remoteModules;
-      this.save(STORAGE_KEYS.MODULES, this.modules);
+    if (this.isDirty('modules_lessons')) {
+      if (!this.pendingRemote['modules_lessons']) this.pendingRemote['modules_lessons'] = {};
+      this.pendingRemote['modules_lessons'].modules = remoteModules;
       this.notify();
+      return;
     }
+    this.modules = [...remoteModules].sort((a, b) => (a.order || 0) - (b.order || 0));
+    this.save(STORAGE_KEYS.MODULES, this.modules);
+    this.notify();
   }
 
   public applyRemoteLessons(remoteLessons: Lesson[]): void {
-    if (remoteLessons.length > 0) {
-      this.lessons = remoteLessons;
-      this.save(STORAGE_KEYS.LESSONS, this.lessons);
+    if (this.isDirty('modules_lessons')) {
+      if (!this.pendingRemote['modules_lessons']) this.pendingRemote['modules_lessons'] = {};
+      this.pendingRemote['modules_lessons'].lessons = remoteLessons;
       this.notify();
+      return;
     }
+    this.lessons = [...remoteLessons].sort((a, b) => (a.order || 0) - (b.order || 0));
+    this.save(STORAGE_KEYS.LESSONS, this.lessons);
+    this.notify();
   }
 
   public applyRemoteDownloads(remoteDownloads: FileDownload[]): void {
-    if (remoteDownloads.length > 0) {
-      this.downloads = remoteDownloads;
-      this.save(STORAGE_KEYS.DOWNLOADS, this.downloads);
+    if (this.isDirty('downloads')) {
+      this.pendingRemote['downloads'] = remoteDownloads;
       this.notify();
+      return;
     }
+    this.downloads = [...remoteDownloads];
+    this.save(STORAGE_KEYS.DOWNLOADS, this.downloads);
+    this.notify();
   }
 
   public applyRemoteQuizzes(remoteQuizzes: Quiz[]): void {
-    if (remoteQuizzes.length > 0) {
-      this.quizzes = remoteQuizzes;
-      this.save(STORAGE_KEYS.QUIZZES, this.quizzes);
+    if (this.isDirty('quizzes')) {
+      this.pendingRemote['quizzes'] = remoteQuizzes;
       this.notify();
+      return;
     }
+    this.quizzes = [...remoteQuizzes];
+    this.save(STORAGE_KEYS.QUIZZES, this.quizzes);
+    this.notify();
   }
 
   public applyRemoteMembers(remoteMembers: Member[]): void {
-    if (remoteMembers.length > 0) {
-      this.members = remoteMembers;
-      this.save(STORAGE_KEYS.MEMBERS, this.members);
+    if (this.isDirty('members')) {
+      this.pendingRemote['members'] = remoteMembers;
       this.notify();
+      return;
     }
+    this.members = [...remoteMembers];
+    this.save(STORAGE_KEYS.MEMBERS, this.members);
+    this.notify();
   }
 
   public applyRemoteContacts(remoteContacts: ContactMessage[]): void {
-    if (remoteContacts.length > 0) {
-      this.contacts = remoteContacts;
-      this.save(STORAGE_KEYS.CONTACTS, this.contacts);
+    if (this.isDirty('contacts')) {
+      this.pendingRemote['contacts'] = remoteContacts;
       this.notify();
+      return;
     }
+    this.contacts = [...remoteContacts];
+    this.save(STORAGE_KEYS.CONTACTS, this.contacts);
+    this.notify();
   }
 
   public resetCMSToDefault(): void {
@@ -572,6 +694,7 @@ class StoreManager {
       this.courses.push(course);
     }
     this.save(STORAGE_KEYS.COURSES, this.courses);
+    this.setDirty('courses');
     this.syncHandlers?.syncCourse?.(course);
     this.addLog(this.auth.role, `Menyimpan kelas: ${course.name}`);
     this.notify();
@@ -582,6 +705,7 @@ class StoreManager {
     if (idx >= 0) {
       const deleted = this.courses.splice(idx, 1)[0];
       this.save(STORAGE_KEYS.COURSES, this.courses);
+      this.setDirty('courses');
       this.syncHandlers?.deleteCourse?.(id);
       this.addLog(this.auth.role, `Menghapus kelas: ${deleted.name}`);
       this.notify();
@@ -593,6 +717,7 @@ class StoreManager {
   public restoreCourse(course: Course): void {
     this.courses.push(course);
     this.save(STORAGE_KEYS.COURSES, this.courses);
+    this.setDirty('courses');
     this.notify();
   }
 
@@ -610,6 +735,7 @@ class StoreManager {
       this.modules.push(mod);
     }
     this.save(STORAGE_KEYS.MODULES, this.modules);
+    this.setDirty('modules_lessons');
     this.syncHandlers?.syncModule?.(mod);
     this.notify();
   }
@@ -619,6 +745,7 @@ class StoreManager {
     if (idx >= 0) {
       const deleted = this.modules.splice(idx, 1)[0];
       this.save(STORAGE_KEYS.MODULES, this.modules);
+      this.setDirty('modules_lessons');
       this.syncHandlers?.deleteModule?.(id);
       this.notify();
       return deleted;
@@ -629,6 +756,7 @@ class StoreManager {
   public restoreModule(mod: CourseModule): void {
     this.modules.push(mod);
     this.save(STORAGE_KEYS.MODULES, this.modules);
+    this.setDirty('modules_lessons');
     this.syncHandlers?.syncModule?.(mod);
     this.notify();
   }
@@ -651,6 +779,7 @@ class StoreManager {
       this.lessons.push(lesson);
     }
     this.save(STORAGE_KEYS.LESSONS, this.lessons);
+    this.setDirty('modules_lessons');
     this.syncHandlers?.syncLesson?.(lesson);
     this.addLog(this.auth.role, `Menyimpan pelajaran: ${lesson.title}`);
     this.notify();
@@ -661,6 +790,7 @@ class StoreManager {
     if (idx >= 0) {
       const deleted = this.lessons.splice(idx, 1)[0];
       this.save(STORAGE_KEYS.LESSONS, this.lessons);
+      this.setDirty('modules_lessons');
       this.syncHandlers?.deleteLesson?.(id);
       this.addLog(this.auth.role, `Menghapus pelajaran: ${deleted.title}`);
       this.notify();
@@ -680,6 +810,7 @@ class StoreManager {
     };
     this.lessons.push(copy);
     this.save(STORAGE_KEYS.LESSONS, this.lessons);
+    this.setDirty('modules_lessons');
     this.syncHandlers?.syncLesson?.(copy);
     this.addLog(this.auth.role, `Menduplikasi pelajaran: ${orig.title}`);
     this.notify();
@@ -700,6 +831,7 @@ class StoreManager {
       this.downloads.push(file);
     }
     this.save(STORAGE_KEYS.DOWNLOADS, this.downloads);
+    this.setDirty('downloads');
     this.syncHandlers?.syncDownload?.(file);
     this.addLog(this.auth.role, `Menyimpan berkas: ${file.name}`);
     this.notify();
@@ -710,6 +842,7 @@ class StoreManager {
     if (idx >= 0) {
       const deleted = this.downloads.splice(idx, 1)[0];
       this.save(STORAGE_KEYS.DOWNLOADS, this.downloads);
+      this.setDirty('downloads');
       this.syncHandlers?.deleteDownload?.(id);
       this.notify();
       return deleted;
@@ -745,6 +878,7 @@ class StoreManager {
       this.quizzes.push(quiz);
     }
     this.save(STORAGE_KEYS.QUIZZES, this.quizzes);
+    this.setDirty('quizzes');
     this.syncHandlers?.syncQuiz?.(quiz);
     this.notify();
   }
@@ -752,6 +886,7 @@ class StoreManager {
   public deleteQuiz(id: string): void {
     this.quizzes = this.quizzes.filter((q) => q.id !== id);
     this.save(STORAGE_KEYS.QUIZZES, this.quizzes);
+    this.setDirty('quizzes');
     this.syncHandlers?.deleteQuiz?.(id);
     this.notify();
   }
@@ -769,6 +904,7 @@ class StoreManager {
       this.members.push(member);
     }
     this.save(STORAGE_KEYS.MEMBERS, this.members);
+    this.setDirty('members');
     this.syncHandlers?.syncMember?.(member);
     this.addLog(this.auth.role, `Menyimpan data member: ${member.name}`);
     this.notify();
@@ -779,6 +915,7 @@ class StoreManager {
     if (idx >= 0) {
       const deleted = this.members.splice(idx, 1)[0];
       this.save(STORAGE_KEYS.MEMBERS, this.members);
+      this.setDirty('members');
       this.syncHandlers?.deleteMember?.(id);
       this.addLog(this.auth.role, `Menghapus member: ${deleted.name}`);
       this.notify();
@@ -796,6 +933,7 @@ class StoreManager {
       }
     });
     this.save(STORAGE_KEYS.MEMBERS, this.members);
+    this.setDirty('members');
     this.notify();
   }
 
@@ -805,6 +943,7 @@ class StoreManager {
     });
     this.members = this.members.filter((m) => !ids.includes(m.id));
     this.save(STORAGE_KEYS.MEMBERS, this.members);
+    this.setDirty('members');
     this.notify();
   }
 
@@ -938,6 +1077,7 @@ class StoreManager {
       this.appExamples.push(item);
     }
     this.save(STORAGE_KEYS.APP_EXAMPLES, this.appExamples);
+    this.setDirty('examples');
     this.syncHandlers?.syncAppExample?.(item);
     this.notify();
   }
@@ -947,6 +1087,7 @@ class StoreManager {
     if (idx >= 0) {
       const deleted = this.appExamples.splice(idx, 1)[0];
       this.save(STORAGE_KEYS.APP_EXAMPLES, this.appExamples);
+      this.setDirty('examples');
       this.syncHandlers?.deleteAppExample?.(id);
       this.notify();
       return deleted;
@@ -967,6 +1108,7 @@ class StoreManager {
       this.testimonials.push(item);
     }
     this.save(STORAGE_KEYS.TESTIMONIALS, this.testimonials);
+    this.setDirty('testimonials');
     this.syncHandlers?.syncTestimonial?.(item);
     this.notify();
   }
@@ -976,6 +1118,7 @@ class StoreManager {
     if (idx >= 0) {
       const deleted = this.testimonials.splice(idx, 1)[0];
       this.save(STORAGE_KEYS.TESTIMONIALS, this.testimonials);
+      this.setDirty('testimonials');
       this.syncHandlers?.deleteTestimonial?.(id);
       this.notify();
       return deleted;
@@ -996,6 +1139,7 @@ class StoreManager {
       this.faq.push(item);
     }
     this.save(STORAGE_KEYS.FAQ, this.faq);
+    this.setDirty('faq');
     this.syncHandlers?.syncFaq?.(item);
     this.notify();
   }
@@ -1005,6 +1149,7 @@ class StoreManager {
     if (idx >= 0) {
       const deleted = this.faq.splice(idx, 1)[0];
       this.save(STORAGE_KEYS.FAQ, this.faq);
+      this.setDirty('faq');
       this.syncHandlers?.deleteFaq?.(id);
       this.notify();
       return deleted;
@@ -1025,6 +1170,7 @@ class StoreManager {
       this.announcements.push(item);
     }
     this.save(STORAGE_KEYS.ANNOUNCEMENTS, this.announcements);
+    this.setDirty('announcements');
     this.syncHandlers?.syncAnnouncement?.(item);
     this.notify();
   }
@@ -1034,6 +1180,7 @@ class StoreManager {
     if (idx >= 0) {
       const deleted = this.announcements.splice(idx, 1)[0];
       this.save(STORAGE_KEYS.ANNOUNCEMENTS, this.announcements);
+      this.setDirty('announcements');
       this.syncHandlers?.deleteAnnouncement?.(id);
       this.notify();
       return deleted;
@@ -1071,6 +1218,7 @@ class StoreManager {
   public deleteContact(id: string): void {
     this.contacts = this.contacts.filter((c) => c.id !== id);
     this.save(STORAGE_KEYS.CONTACTS, this.contacts);
+    this.setDirty('contacts');
     this.notify();
   }
 

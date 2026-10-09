@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { CMSSettings, Role } from '../../types';
 import { ImageUploader } from '../common/ImageUploader';
 import { RunningTextBanner } from '../common/RunningTextBanner';
+import { firebaseSync } from '../../services/firebaseSync';
+import { store } from '../../services/store';
 import {
   Save,
   Eye,
@@ -20,6 +22,7 @@ import {
   MapPin,
   Phone,
   Sliders,
+  CloudUpload,
 } from 'lucide-react';
 
 interface AdminCMSProps {
@@ -27,7 +30,7 @@ interface AdminCMSProps {
   cms: CMSSettings;
   onUpdateCMS: (updates: Partial<CMSSettings>) => void;
   onResetCMS?: () => void;
-  onToast: (msg: string) => void;
+  onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
   activeSubTab?: string;
   onSelectSubTab?: (tabId: string) => void;
 }
@@ -101,11 +104,19 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
     }
   }, [cms, isSaving]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    onUpdateCMS(formData);
-    onToast('Pengaturan CMS berhasil disimpan & disinkronkan ke Firebase');
-    setTimeout(() => setIsSaving(false), 600);
+    try {
+      onUpdateCMS(formData);
+      await firebaseSync.syncCMSToFirebase(formData);
+      store.clearDirty('cms');
+      onToast('Pengaturan CMS berhasil disimpan & disinkronkan ke Firebase');
+    } catch (err: any) {
+      console.error(err);
+      onToast('Gagal menyimpan ke Firebase');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const runningTextData = formData.runningText || {

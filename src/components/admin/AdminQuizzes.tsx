@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Quiz, QuizQuestion, Course, CourseModule } from '../../types';
 import { generateId } from '../../utils/crypto';
-import { Plus, Trash2, HelpCircle, Edit2 } from 'lucide-react';
+import { firebaseSync } from '../../services/firebaseSync';
+import { store } from '../../services/store';
+import { Plus, Trash2, HelpCircle, Edit2, CloudUpload } from 'lucide-react';
 
 interface AdminQuizzesProps {
   quizzes: Quiz[];
@@ -23,6 +25,29 @@ export const AdminQuizzes: React.FC<AdminQuizzesProps> = ({
   const [selectedCourseId, setSelectedCourseId] = useState<string>(courses[0]?.id || '');
   const [isEditing, setIsEditing] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
+  const [isSyncingFirebase, setIsSyncingFirebase] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(store.isDirty('quizzes'));
+
+  useEffect(() => {
+    return store.subscribe(() => {
+      setHasUnsavedChanges(store.isDirty('quizzes'));
+    });
+  }, []);
+
+  const handleSaveToFirebase = async () => {
+    setIsSyncingFirebase(true);
+    try {
+      const res = await firebaseSync.syncQuizzesToFirebase(quizzes);
+      store.clearDirty('quizzes');
+      setHasUnsavedChanges(false);
+      onToast(`Berhasil menyimpan ke Firebase! (${res.written} kuis tersimpan, ${res.deleted} terhapus)`);
+    } catch (err: any) {
+      console.error(err);
+      onToast('Gagal menyimpan ke Firebase', 'error');
+    } finally {
+      setIsSyncingFirebase(false);
+    }
+  };
 
   // Form states
   const [selectedModuleId, setSelectedModuleId] = useState<string>('');
@@ -80,7 +105,8 @@ export const AdminQuizzes: React.FC<AdminQuizzesProps> = ({
 
     onSaveQuiz(payload);
     setIsEditing(false);
-    onToast('Kuis berhasil disimpan');
+    setHasUnsavedChanges(true);
+    onToast('Kuis disimpan di lokal. Tekan "Simpan ke Firebase" untuk menyimpan ke cloud.');
   };
 
   const addQuestion = () => {
@@ -118,34 +144,74 @@ export const AdminQuizzes: React.FC<AdminQuizzesProps> = ({
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-          Kelola Kuis
-        </h2>
+        <div>
+          <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
+            Kelola Kuis
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Perubahan baru tersimpan di lokal sampai Anda menekan tombol Simpan ke Firebase.
+          </p>
+        </div>
 
-        {!isEditing && (
-          <div className="flex items-center gap-3">
-            <select
-              value={selectedCourseId}
-              onChange={(e) => setSelectedCourseId(e.target.value)}
-              className="h-10 px-3 text-xs sm:text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[12px]"
-            >
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSaveToFirebase}
+            disabled={isSyncingFirebase}
+            className={`h-10 px-4 text-xs sm:text-sm font-semibold text-white rounded-[12px] flex items-center gap-2 shadow-xs transition-all shrink-0 ${
+              hasUnsavedChanges
+                ? 'bg-[#FF7A1A] hover:bg-[#E56A10] ring-2 ring-[#FF7A1A]/40'
+                : 'bg-[#0B2A5B] hover:bg-[#1E4FA8]'
+            } disabled:opacity-75`}
+            title="Simpan seluruh kuis ke Firebase Firestore"
+          >
+            <CloudUpload className={`w-4 h-4 ${isSyncingFirebase ? 'animate-bounce' : 'text-[#FF7A1A]'}`} />
+            <span>{isSyncingFirebase ? 'Menyimpan...' : 'Simpan ke Firebase'}</span>
+          </button>
 
-            <button
-              onClick={handleOpenAdd}
-              className="h-10 px-4 text-xs sm:text-sm font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center gap-1.5 shadow-xs"
-            >
-              <Plus className="w-4 h-4" />
-              Buat Kuis
-            </button>
-          </div>
-        )}
+          {!isEditing && (
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedCourseId}
+                onChange={(e) => setSelectedCourseId(e.target.value)}
+                className="h-10 px-3 text-xs sm:text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[12px]"
+              >
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={handleOpenAdd}
+                className="h-10 px-4 text-xs sm:text-sm font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center gap-1.5 shadow-xs"
+              >
+                <Plus className="w-4 h-4" />
+                Buat Kuis
+              </button>
+            </div>
+          )}
+        </div>
       </div>
+
+      {hasUnsavedChanges && (
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-[12px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-200">
+          <div className="flex items-center gap-2">
+            <span className="text-base">⚠️</span>
+            <span>Ada perubahan kuis (tambah/ubah/hapus) di lokal perangkat ini. Tekan tombol <strong>"Simpan ke Firebase"</strong> di kanan atas agar tersimpan permanen di cloud dan terlihat di perangkat lain.</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSaveToFirebase}
+            disabled={isSyncingFirebase}
+            className="h-8 px-3 text-xs font-bold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-lg shrink-0 flex items-center gap-1.5 shadow-xs"
+          >
+            <CloudUpload className="w-3.5 h-3.5" />
+            Simpan Sekarang
+          </button>
+        </div>
+      )}
 
       {isEditing ? (
         <form onSubmit={handleSave} className="bg-white dark:bg-slate-900 rounded-[14px] p-6 border border-slate-200 dark:border-slate-800 shadow-md space-y-6">
@@ -305,7 +371,8 @@ export const AdminQuizzes: React.FC<AdminQuizzesProps> = ({
                     <button
                       onClick={() => {
                         onDeleteQuiz(quiz.id);
-                        onToast('Kuis berhasil dihapus');
+                        setHasUnsavedChanges(true);
+                        onToast('Kuis dihapus dari lokal. Tekan "Simpan ke Firebase" untuk memperbarui database cloud.');
                       }}
                       className="h-8 px-2.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-[8px] flex items-center gap-1"
                     >

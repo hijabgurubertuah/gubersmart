@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Course, FileSource, CourseAuthor } from '../../types';
 import { ImageUploader } from '../common/ImageUploader';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { RichTextEditor } from '../common/RichTextEditor';
 import { formatRupiah, generateId } from '../../utils/crypto';
 import { firebaseSync } from '../../services/firebaseSync';
+import { store } from '../../services/store';
 import {
   Plus,
   Edit2,
@@ -15,6 +16,7 @@ import {
   BookOpen,
   Loader2,
   CheckCircle2,
+  CloudUpload,
 } from 'lucide-react';
 
 interface AdminClassesProps {
@@ -22,7 +24,7 @@ interface AdminClassesProps {
   onSaveCourse: (course: Course) => void;
   onDeleteCourse: (id: string) => Course | null;
   onRestoreCourse: (course: Course) => void;
-  onToast: (msg: string) => void;
+  onToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 const AUTOSAVE_STORAGE_KEY = 'guber_admin_class_local_draft';
@@ -38,6 +40,14 @@ export const AdminClasses: React.FC<AdminClassesProps> = ({
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncingFirebase, setIsSyncingFirebase] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(store.isDirty('courses'));
+
+  useEffect(() => {
+    return store.subscribe(() => {
+      setHasUnsavedChanges(store.isDirty('courses'));
+    });
+  }, []);
 
   // Form states
   const [coverSource, setCoverSource] = useState<FileSource>('tautan');
@@ -165,17 +175,14 @@ export const AdminClasses: React.FC<AdminClassesProps> = ({
 
       // 1. Save to local store
       onSaveCourse(payload);
-
-      // 2. Direct write to Firebase Firestore for instant real-time sync
-      await firebaseSync.syncCourse(payload);
-
       setIsEditing(false);
       localStorage.removeItem(AUTOSAVE_STORAGE_KEY);
-      onToast('Kelas berhasil disimpan & disinkronkan ke Firebase secara real-time!');
+      setHasUnsavedChanges(true);
+      onToast('Kelas disimpan ke lokal. Klik "Simpan ke Firebase" untuk menyimpan permanen ke cloud.');
     } catch (err: any) {
-      console.warn('Sync notice:', err);
+      console.warn('Save notice:', err);
       setIsEditing(false);
-      onToast('Kelas berhasil disimpan');
+      onToast('Kelas berhasil disimpan di lokal');
     } finally {
       setIsSaving(false);
     }
@@ -186,7 +193,22 @@ export const AdminClasses: React.FC<AdminClassesProps> = ({
     const deleted = onDeleteCourse(deleteTargetId);
     setDeleteTargetId(null);
     if (deleted) {
-      onToast('Kelas berhasil dihapus');
+      setHasUnsavedChanges(true);
+      onToast('Kelas dihapus dari lokal. Tekan "Simpan ke Firebase" untuk memperbarui database cloud.');
+    }
+  };
+
+  const handleSaveToFirebase = async () => {
+    setIsSyncingFirebase(true);
+    try {
+      const res = await firebaseSync.syncCoursesToFirebase(courses);
+      setHasUnsavedChanges(false);
+      onToast(`Berhasil menyimpan ke Firebase! (${res.written} kelas tersimpan, ${res.deleted} kelas terhapus)`);
+    } catch (err: any) {
+      console.error(err);
+      onToast('Gagal menyimpan ke Firebase', 'error');
+    } finally {
+      setIsSyncingFirebase(false);
     }
   };
 
@@ -206,30 +228,68 @@ export const AdminClasses: React.FC<AdminClassesProps> = ({
           <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
             Kelola Kelas
           </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Perubahan hanya tersimpan di lokal sampai Anda menekan tombol Simpan ke Firebase.
+          </p>
         </div>
 
-        {!isEditing && (
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative w-full sm:w-56">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Cari kelas..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full h-10 pl-9 pr-3 text-xs sm:text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[12px] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/40"
-              />
-            </div>
-            <button
-              onClick={handleOpenAdd}
-              className="h-10 px-4 text-xs sm:text-sm font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              Tambah Kelas
-            </button>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleSaveToFirebase}
+            disabled={isSyncingFirebase}
+            className={`h-10 px-4 text-xs sm:text-sm font-semibold text-white rounded-[12px] flex items-center gap-2 shadow-xs transition-all shrink-0 ${
+              hasUnsavedChanges
+                ? 'bg-[#FF7A1A] hover:bg-[#E56A10] ring-2 ring-[#FF7A1A]/40'
+                : 'bg-[#0B2A5B] hover:bg-[#1E4FA8]'
+            } disabled:opacity-75`}
+            title="Simpan seluruh perubahan daftar kelas ke Firebase Firestore"
+          >
+            <CloudUpload className={`w-4 h-4 ${isSyncingFirebase ? 'animate-bounce' : 'text-[#FF7A1A]'}`} />
+            <span>{isSyncingFirebase ? 'Menyimpan ke Cloud...' : 'Simpan ke Firebase'}</span>
+          </button>
+
+          {!isEditing && (
+            <>
+              <div className="relative w-full sm:w-52">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari kelas..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full h-10 pl-9 pr-3 text-xs sm:text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[12px] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/40"
+                />
+              </div>
+              <button
+                onClick={handleOpenAdd}
+                className="h-10 px-4 text-xs sm:text-sm font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-[12px] flex items-center gap-1.5 shadow-xs transition-colors shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                Tambah Kelas
+              </button>
+            </>
+          )}
+        </div>
       </div>
+
+      {hasUnsavedChanges && (
+        <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-[12px] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-800 dark:text-amber-200">
+          <div className="flex items-center gap-2">
+            <span className="text-base">⚠️</span>
+            <span>Ada perubahan kelas (tambah/ubah/hapus) yang baru tersimpan di lokal perangkat ini. Tekan tombol <strong>"Simpan ke Firebase"</strong> agar tersimpan permanen dan terlihat di perangkat lain.</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleSaveToFirebase}
+            disabled={isSyncingFirebase}
+            className="h-8 px-3 text-xs font-bold text-white bg-[#FF7A1A] hover:bg-[#E56A10] rounded-lg shrink-0 flex items-center gap-1.5 shadow-xs"
+          >
+            <CloudUpload className="w-3.5 h-3.5" />
+            Simpan Sekarang
+          </button>
+        </div>
+      )}
 
       {/* Editor Form Modal / View */}
       {isEditing ? (

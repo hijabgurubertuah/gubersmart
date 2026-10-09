@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { CMSSettings } from '../../types';
 import { APPS_SCRIPT_CODE } from '../../services/appsScript';
-import { Copy, Check, Wifi, AlertCircle, Loader2, FolderCheck, ExternalLink, Sparkles, Folder } from 'lucide-react';
+import { firebaseSync } from '../../services/firebaseSync';
+import { store } from '../../services/store';
+import { Copy, Check, Wifi, AlertCircle, Loader2, FolderCheck, ExternalLink, Sparkles, Folder, CloudUpload, Database } from 'lucide-react';
 
 interface AdminSyncProps {
   cms: CMSSettings;
@@ -17,6 +19,32 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
   const [copiedFolderId, setCopiedFolderId] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connected' | 'failed'>('idle');
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
+
+  const handleSyncAllToFirebase = async () => {
+    setIsSyncingAll(true);
+    try {
+      await firebaseSync.syncCMSToFirebase(store.getCMS());
+      await firebaseSync.syncCoursesToFirebase(store.getCourses());
+      await firebaseSync.syncModulesAndLessonsToFirebase(store.getModules(), store.getLessons());
+      await firebaseSync.syncDownloadsToFirebase(store.getDownloads());
+      await firebaseSync.syncQuizzesToFirebase(store.getQuizzes());
+      await firebaseSync.syncMembersToFirebase(store.getMembers());
+      await firebaseSync.syncExamplesToFirebase(store.getAppExamples());
+      await firebaseSync.syncTestimonialsToFirebase(store.getTestimonials());
+      await firebaseSync.syncFaqsToFirebase(store.getFaq());
+      await firebaseSync.syncAnnouncementsToFirebase(store.getAnnouncements());
+      await firebaseSync.syncContactsToFirebase(store.getContacts());
+
+      store.clearAllDirty();
+      onToast('Seluruh data konten & pengaturan berhasil disinkronkan ke Firebase Firestore!', 'success');
+    } catch (err: any) {
+      console.error(err);
+      onToast('Gagal menyinkronkan ke Firebase', 'error');
+    } finally {
+      setIsSyncingAll(false);
+    }
+  };
 
   useEffect(() => {
     if (cms.sync.driveFolderId) {
@@ -111,6 +139,31 @@ export const AdminSync: React.FC<AdminSyncProps> = ({ cms, onUpdateSync, onToast
             Folder Google Drive otomatis dibuat. Mendukung galeri gambar dan deteksi berkas yang di-paste langsung ke Google Drive!
           </p>
         </div>
+      </div>
+
+      {/* Firebase Cloud Manual Full Sync Card */}
+      <div className="bg-gradient-to-r from-[#0B2A5B] to-[#1E4FA8] text-white rounded-[16px] p-5 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Database className="w-5 h-5 text-[#FF7A1A]" />
+            <h3 className="font-bold text-base font-heading">
+              Sinkronisasi Cloud Firebase (Manual & Lengkap)
+            </h3>
+          </div>
+          <p className="text-xs text-slate-200 max-w-xl">
+            Simpan dan perbarui seluruh basis data (Kelas, Pelajaran, Modul, Berkas, Kuis, Member, Contoh Aplikasi, Testimoni, FAQ, dan Pengaturan Tampilan) ke Firebase Firestore secara serentak.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleSyncAllToFirebase}
+          disabled={isSyncingAll}
+          className="h-11 px-5 text-xs sm:text-sm font-bold text-white bg-[#FF7A1A] hover:bg-[#E56A10] active:scale-95 rounded-[12px] flex items-center justify-center gap-2.5 shadow-lg shrink-0 transition-all disabled:opacity-75 cursor-pointer"
+        >
+          <CloudUpload className={`w-4 h-4 ${isSyncingAll ? 'animate-bounce' : ''}`} />
+          <span>{isSyncingAll ? 'Menyinkronkan Semua...' : 'Simpan Semua ke Firebase'}</span>
+        </button>
       </div>
 
       {/* Troubleshooting Card for Exception: Akses ditolak: DriveApp */}
