@@ -371,7 +371,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               onChange('tautan', val);
               setImgError(false);
             }}
-            placeholder="https://images.unsplash.com/... atau https://drive.google.com/..."
+            placeholder="https://..."
             className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/40 focus:border-[#FF7A1A]"
           />
         </div>
@@ -408,12 +408,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
                 {uploadStatus}
               </span>
             )}
-
-            {!isScriptConfigured && (
-              <p className="w-full text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                💡 <span className="font-medium">Google Drive Apps Script:</span> Sambungkan di menu <strong>Sinkronisasi</strong> agar gambar otomatis tersimpan permanen ke Drive dan link teksnya tersimpan ke Firebase.
-              </p>
-            )}
           </div>
         </div>
       )}
@@ -422,55 +416,9 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       {activeTab === 'galeri' && (
         <div className="space-y-3 p-3 bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-[14px]">
           {!isScriptConfigured ? (
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-[10px] text-xs text-amber-900 dark:text-amber-200">
-              <p className="font-semibold mb-1">Sinkronisasi Google Drive Belum Diatur</p>
-              <p>
-                Atur URL Web App Google Apps Script di menu <strong>Admin &gt; Sinkronisasi</strong> untuk mengaktifkan galeri otomatis Drive.
-              </p>
-            </div>
-          ) : isOutdatedScript ? (
-            /* Specific friendly card when script deployment has not been updated */
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700/60 rounded-[12px] space-y-3">
-              <div className="flex items-start gap-2.5">
-                <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                <div className="text-xs text-amber-950 dark:text-amber-100 space-y-2">
-                  <p className="font-bold text-sm text-amber-900 dark:text-amber-300">
-                    Google Apps Script Perlu Di-Deploy Versi Baru (*New version*)
-                  </p>
-                  <p className="leading-relaxed text-slate-700 dark:text-slate-300">
-                    Pesan <em>"Aksi tidak dikenal: listImages"</em> muncul karena Web App di Google Apps Script Anda masih menjalankan rilis versi lama (belum di-deploy ulang dengan kode galeri).
-                  </p>
-
-                  <div className="p-2.5 bg-white dark:bg-slate-900 rounded-[8px] border border-amber-200 dark:border-amber-800 space-y-1.5 text-slate-700 dark:text-slate-300">
-                    <p className="font-semibold text-slate-800 dark:text-slate-200">Langkah 1 Menit untuk Mengaktifkan:</p>
-                    <ol className="list-decimal list-inside space-y-1 pl-0.5">
-                      <li>Salin kode Apps Script terbaru dengan tombol di bawah.</li>
-                      <li>Buka <a href="https://script.google.com" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-[#1E4FA8] dark:text-sky-400">script.google.com</a>, tempelkan kode & simpan (Ctrl+S).</li>
-                      <li>
-                        Klik <strong>Deploy &gt; Manage deployments &gt; Edit (ikon pensil)</strong> &gt; pilih <strong>Version: New version</strong> &gt; klik <strong>Deploy</strong>.
-                      </li>
-                    </ol>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                    <button
-                      type="button"
-                      onClick={handleCopyAppsScript}
-                      className="h-8 px-3 text-xs font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] rounded-[8px] flex items-center gap-1.5 transition-colors shadow-2xs"
-                    >
-                      {copiedCode ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                      {copiedCode ? 'Kode Berhasil Disalin!' : 'Salin Kode Apps Script Terbaru'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => loadGallery(true)}
-                      className="h-8 px-3 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 border border-slate-200 dark:border-slate-700 rounded-[8px] flex items-center gap-1.5 transition-colors"
-                    >
-                      <RotateCw className="w-3.5 h-3.5 text-[#FF7A1A]" />
-                      Coba Segarkan Lagi
-                    </button>
-                  </div>
-                </div>
+            <div className="space-y-3">
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-[10px] text-xs text-amber-800 dark:text-amber-300">
+                Sinkronisasi Google Drive belum diatur di menu Sinkronisasi.
               </div>
 
               {/* Instant fallback: images already used in app */}
@@ -506,6 +454,30 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             </div>
           ) : (
             <>
+              {isOutdatedScript && (
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700/60 rounded-[10px] flex items-center justify-between gap-2 text-xs mb-3">
+                  <span className="font-semibold text-amber-900 dark:text-amber-300">
+                    Google Apps Script perlu di-deploy versi baru
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCopyAppsScript}
+                      className="h-7 px-2.5 text-xs font-semibold text-white bg-[#0B2A5B] hover:bg-[#1E4FA8] rounded-md flex items-center gap-1"
+                    >
+                      {copiedCode ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      {copiedCode ? 'Disalin' : 'Salin Kode'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadGallery(true)}
+                      className="h-7 px-2 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md flex items-center gap-1"
+                    >
+                      <RotateCw className="w-3 h-3 text-[#FF7A1A]" />
+                    </button>
+                  </div>
+                </div>
+              )}
               {/* Breadcrumb Trail & Back Button */}
               <div className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[10px] text-xs">
                 <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none font-medium text-slate-700 dark:text-slate-300">

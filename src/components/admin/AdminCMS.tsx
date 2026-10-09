@@ -1,5 +1,7 @@
+// ATURAN BAKU: UI HARUS SELALU MINIMALIS, TANPA TEKS PETUNJUK PANJANG, BERSIH & JELAS
 import React, { useState } from 'react';
 import { CMSSettings, Role } from '../../types';
+import { UI_DESIGN_PHILOSOPHY } from '../../constants/designSystem';
 import { ImageUploader } from '../common/ImageUploader';
 import { RunningTextBanner } from '../common/RunningTextBanner';
 import { firebaseSync } from '../../services/firebaseSync';
@@ -138,48 +140,35 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="sticky top-16 z-20 bg-slate-50/95 dark:bg-slate-950/95 py-3 -mt-2 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold font-heading text-[#0B2A5B] dark:text-white">
-              Pengaturan Tampilan (CMS)
-            </h2>
-            <span className="text-xs px-2.5 py-1 rounded-full bg-[#FF7A1A]/10 text-[#FF7A1A] font-semibold border border-[#FF7A1A]/20">
-              {allowedTabs.find((t) => t.id === activeTab)?.label || 'Pengaturan'}
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Pilih menu/tab CMS melalui sidebar panel admin di sebelah kiri.
-          </p>
+      <div className="sticky top-16 z-20 bg-slate-50/95 dark:bg-slate-950/95 py-3 -mt-2 backdrop-blur-sm border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-lg font-bold font-heading text-[#0B2A5B] dark:text-white">
+            Pengaturan CMS
+          </h2>
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#FF7A1A]/10 text-[#FF7A1A] font-medium border border-[#FF7A1A]/20">
+            {allowedTabs.find((t) => t.id === activeTab)?.label || 'Pengaturan'}
+          </span>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="h-10 px-5 text-sm font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] active:scale-[0.98] disabled:opacity-75 rounded-[12px] flex items-center gap-2 shadow-sm transition-all"
-          >
-            <Save className={`w-4 h-4 ${isSaving ? 'animate-spin' : ''}`} />
-            {isSaving ? 'Menyimpan ke Cloud...' : 'Simpan Perubahan'}
-          </button>
-        </div>
+        <button
+          onClick={handleSave}
+          disabled={isSaving}
+          className="h-9 px-4 text-xs font-semibold text-white bg-[#FF7A1A] hover:bg-[#E56A10] active:scale-[0.98] disabled:opacity-75 rounded-[10px] flex items-center gap-2 shadow-xs transition-all"
+        >
+          <Save className={`w-3.5 h-3.5 ${isSaving ? 'animate-spin' : ''}`} />
+          {isSaving ? 'Menyimpan...' : 'Simpan'}
+        </button>
       </div>
 
-      {/* Konten Formulir CMS Langsung (Menu sudah berada di sidebar panel admin) */}
-      <div className="w-full bg-white dark:bg-slate-900 rounded-[14px] p-6 sm:p-8 border border-slate-100 dark:border-slate-800 shadow-sm space-y-6">
+      <div className="w-full bg-white dark:bg-slate-900 rounded-[14px] p-5 sm:p-6 border border-slate-100 dark:border-slate-800 shadow-sm space-y-5">
         {/* 1. Identitas & Logo */}
         {activeTab === 'identity' && (
-          <div className="space-y-5 max-w-2xl">
-            {/* Logo Aplikasi Minimalis */}
-            <div className="p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-3">
+          <div className="space-y-4 max-w-2xl">
+            {/* Logo */}
+            <div className="p-3.5 rounded-[12px] border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-2.5">
               <div className="flex items-center justify-between">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    Logo Aplikasi
-                  </label>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Unggah gambar logo (PNG/JPG/SVG/WebP) atau masukkan URL tautan langsung.
-                  </p>
-                </div>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Logo
+                </label>
                 {formData.identity.logoUrl && (
                   <button
                     type="button"
@@ -193,59 +182,55 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                       onUpdateCMS(updated);
                       onToast('Logo berhasil dihapus');
                     }}
-                    className="px-2.5 py-1 text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-semibold bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 rounded-[8px] flex items-center gap-1.5 transition-colors"
+                    className="text-xs text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    Hapus Logo
+                    Hapus
                   </button>
                 )}
               </div>
 
-              <div>
-                <ImageUploader
-                  label=""
-                  source={
-                    (formData.identity.logoUrl?.includes('drive.google.com') ||
-                    formData.identity.logoUrl?.includes('googleusercontent.com') ||
-                    formData.identity.logoUrl?.startsWith('data:'))
-                      ? 'drive'
-                      : 'tautan'
-                  }
-                  value={formData.identity.logoUrl || ''}
-                  onChange={(_source, val) => {
-                    const updated = {
-                      ...formData,
-                      identity: { ...formData.identity, logoUrl: val, faviconUrl: val },
-                    };
-                    setFormData(updated);
-                    setHasEdits(true);
-                    onUpdateCMS(updated);
-                  }}
-                />
-              </div>
+              <ImageUploader
+                label=""
+                source={
+                  (formData.identity.logoUrl?.includes('drive.google.com') ||
+                  formData.identity.logoUrl?.includes('googleusercontent.com') ||
+                  formData.identity.logoUrl?.startsWith('data:'))
+                    ? 'drive'
+                    : 'tautan'
+                }
+                value={formData.identity.logoUrl || ''}
+                onChange={(_source, val) => {
+                  const updated = {
+                    ...formData,
+                    identity: { ...formData.identity, logoUrl: val, faviconUrl: val },
+                  };
+                  setFormData(updated);
+                  setHasEdits(true);
+                  onUpdateCMS(updated);
+                }}
+              />
 
               {formData.identity.logoUrl && (
-                <div className="flex items-center gap-3 pt-2.5 border-t border-slate-200/80 dark:border-slate-700/80 text-xs text-slate-600 dark:text-slate-300">
-                  <span className="text-slate-400 shrink-0">Pratinjau di Navbar:</span>
-                  <div className="flex items-center gap-2.5 px-3 py-1.5 bg-white dark:bg-slate-900 rounded-[10px] border border-slate-200 dark:border-slate-700 shadow-2xs">
-                    <div className="w-8 h-8 rounded-[8px] bg-transparent flex items-center justify-center overflow-hidden shrink-0">
-                      <img
-                        src={formData.identity.logoUrl}
-                        alt="Logo Preview"
-                        className="w-full h-full object-contain"
-                      />
-                    </div>
-                    <span className="font-heading font-bold text-slate-900 dark:text-white text-sm">
-                      {formData.identity.appName || 'Guber Smart'}
-                    </span>
+                <div className="flex items-center gap-2.5 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-xs">
+                  <span className="text-slate-400">Pratinjau:</span>
+                  <div className="w-7 h-7 rounded-md overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-0.5 flex items-center justify-center">
+                    <img
+                      src={formData.identity.logoUrl}
+                      alt="Logo"
+                      className="w-full h-full object-contain"
+                    />
                   </div>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
+                    {formData.identity.appName || 'Guber Smart'}
+                  </span>
                 </div>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Nama Aplikasi *
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Nama Aplikasi
               </label>
               <input
                 type="text"
@@ -259,14 +244,14 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                   setHasEdits(true);
                   onUpdateCMS(updated);
                 }}
-                className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
+                className="w-full h-10 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[12px]"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  Judul Utama Banner
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Judul Banner
                 </label>
                 {formData.identity.heroTitle && (
                   <button
@@ -279,12 +264,12 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                       setFormData(updated);
                       setHasEdits(true);
                       onUpdateCMS(updated);
-                      onToast('Judul banner telah dikosongkan');
+                      onToast('Judul dikosongkan');
                     }}
-                    className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-medium flex items-center gap-1"
+                    className="text-xs text-rose-600 hover:text-rose-700 font-medium flex items-center gap-1"
                   >
                     <Trash2 className="w-3 h-3" />
-                    Kosongkan Judul
+                    Kosongkan
                   </button>
                 )}
               </div>
@@ -300,17 +285,14 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                   setHasEdits(true);
                   onUpdateCMS(updated);
                 }}
-                placeholder="(Bisa dikosongkan untuk menampilkan gambar banner penuh tanpa teks)"
-                className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px]"
+                placeholder="Kosongkan jika hanya ingin menampilkan gambar"
+                className="w-full h-10 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[12px]"
               />
-              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
-                💡 Jika judul dan subjudul dikosongkan, halaman utama akan menampilkan gambar banner saja tanpa ada warna/lapisan yang menutupi.
-              </p>
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Subjudul Banner
                 </label>
                 {formData.identity.heroSubtitle && (
@@ -324,17 +306,17 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                       setFormData(updated);
                       setHasEdits(true);
                       onUpdateCMS(updated);
-                      onToast('Subjudul banner telah dikosongkan');
+                      onToast('Subjudul dikosongkan');
                     }}
-                    className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-medium flex items-center gap-1"
+                    className="text-xs text-rose-600 hover:text-rose-700 font-medium flex items-center gap-1"
                   >
                     <Trash2 className="w-3 h-3" />
-                    Kosongkan Subjudul
+                    Kosongkan
                   </button>
                 )}
               </div>
               <textarea
-                rows={3}
+                rows={2}
                 value={formData.identity.heroSubtitle || ''}
                 onChange={(e) => {
                   const updated = {
@@ -345,212 +327,204 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                   setHasEdits(true);
                   onUpdateCMS(updated);
                 }}
-                placeholder="(Bisa dikosongkan untuk menampilkan gambar banner penuh tanpa teks)"
-                className="w-full p-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] resize-none"
+                placeholder="Kosongkan jika hanya ingin menampilkan gambar"
+                className="w-full p-3 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[12px] resize-none"
               />
             </div>
 
-            {/* Gambar Latar Banner Utama (Carousel) */}
-            <div className="p-4 sm:p-5 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <label className="block text-sm font-bold text-slate-800 dark:text-slate-200">
-                    Gambar Cover / Latar Banner Utama
+            {/* Gambar Banner */}
+            <div className="p-3.5 rounded-[12px] border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    Gambar Banner
                   </label>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Gambar cover banner header halaman utama. Disediakan tombol hapus pada masing-masing gambar. Jika judul & subjudul dikosongkan, gambar akan tampil penuh tanpa warna yang menutupi.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-[#1E4FA8] dark:text-blue-300">
-                    {heroImagesData.length} Gambar Terpasang
-                  </span>
                   {heroImagesData.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updated = {
-                          ...formData,
-                          identity: {
-                            ...formData.identity,
-                            heroImages: [],
-                          },
-                        };
-                        setFormData(updated);
-                        setHasEdits(true);
-                        onUpdateCMS(updated);
-                        onToast('Semua gambar latar cover telah dihapus');
-                      }}
-                      className="text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 px-3 py-1.5 rounded-[10px] bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 transition-colors flex items-center gap-1.5"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Hapus Semua Gambar
-                    </button>
+                    <span className="text-[11px] font-semibold px-2 py-0.2 rounded-full bg-blue-100 dark:bg-blue-950 text-[#1E4FA8] dark:text-blue-300">
+                      {heroImagesData.length}
+                    </span>
                   )}
                 </div>
+                {heroImagesData.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = {
+                        ...formData,
+                        identity: {
+                          ...formData.identity,
+                          heroImages: [],
+                        },
+                      };
+                      setFormData(updated);
+                      setHasEdits(true);
+                      onUpdateCMS(updated);
+                      onToast('Semua gambar banner dihapus');
+                    }}
+                    className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Hapus Semua
+                  </button>
+                )}
               </div>
 
-              {/* Grid slide images with explicit delete button on each card */}
-              <div className="space-y-4">
-                {heroImagesData.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {heroImagesData.map((imgUrl, idx) => (
-                      <div
-                        key={idx}
-                        className="rounded-[14px] overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm flex flex-col"
-                      >
-                        <div className="relative aspect-video w-full bg-slate-950 overflow-hidden">
-                          <img
-                            src={imgUrl}
-                            alt={`Banner Slide ${idx + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-white px-2.5 py-0.5 bg-black/70 rounded-[8px] backdrop-blur-xs shadow-xs">
-                              Gambar {idx + 1}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Tombol Hapus Pada Masing-Masing Gambar (Selalu Tampil Jelas) */}
-                        <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[140px]" title={imgUrl}>
-                            {imgUrl.startsWith('data:') ? 'Berkas Unggahan' : imgUrl.split('/').pop()?.split('?')[0] || `Gambar ${idx + 1}`}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updatedImages = heroImagesData.filter((_, i) => i !== idx);
-                              const updated = {
-                                ...formData,
-                                identity: {
-                                  ...formData.identity,
-                                  heroImages: updatedImages,
-                                },
-                              };
-                              setFormData(updated);
-                              setHasEdits(true);
-                              onUpdateCMS(updated);
-                              onToast(`Gambar cover banner ${idx + 1} berhasil dihapus`);
-                            }}
-                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-[10px] text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shadow-xs shrink-0"
-                            title={`Hapus gambar ${idx + 1}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Hapus Gambar
-                          </button>
-                        </div>
+              {heroImagesData.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {heroImagesData.map((imgUrl, idx) => (
+                    <div
+                      key={idx}
+                      className="rounded-[10px] overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-2xs flex flex-col"
+                    >
+                      <div className="relative aspect-video w-full bg-slate-950">
+                        <img
+                          src={imgUrl}
+                          alt={`Banner ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <span className="absolute top-1.5 left-1.5 text-[10px] font-bold text-white px-1.5 py-0.5 bg-black/70 rounded">
+                          {idx + 1}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-6 rounded-[14px] bg-slate-100/70 dark:bg-slate-800/60 border border-dashed border-slate-300 dark:border-slate-700 text-center space-y-1.5 text-slate-500 dark:text-slate-400">
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      Tidak ada gambar latar cover banner yang terpasang
-                    </p>
-                    <p className="text-xs max-w-md mx-auto">
-                      Header di halaman publik saat ini menggunakan warna gradien bawaan tanpa gambar latar. Anda dapat menambahkan gambar banner di bawah ini.
-                    </p>
-                  </div>
-                )}
-
-                {/* Tambah slide baru */}
-                <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
-                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
-                    + Tambah Gambar Cover / Latar Banner Baru
-                  </label>
-                  <ImageUploader
-                    label=""
-                    source="tautan"
-                    value=""
-                    onChange={(_source, val) => {
-                      if (val && val.trim() !== '') {
-                        const updated = [...heroImagesData, val.trim()];
-                        const updatedForm = {
-                          ...formData,
-                          identity: {
-                            ...formData.identity,
-                            heroImages: updated,
-                          },
-                        };
-                        setFormData(updatedForm);
-                        setHasEdits(true);
-                        onUpdateCMS(updatedForm);
-                        onToast('Gambar latar banner baru berhasil ditambahkan');
-                      }
-                    }}
-                  />
+                      <div className="p-1.5 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <span className="text-[10px] text-slate-400 truncate max-w-[80px]" title={imgUrl}>
+                          {imgUrl.startsWith('data:') ? 'Unggahan' : imgUrl.split('/').pop()?.split('?')[0] || `${idx + 1}`}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updatedImages = heroImagesData.filter((_, i) => i !== idx);
+                            const updated = {
+                              ...formData,
+                              identity: {
+                                ...formData.identity,
+                                heroImages: updatedImages,
+                              },
+                            };
+                            setFormData(updated);
+                            setHasEdits(true);
+                            onUpdateCMS(updated);
+                            onToast(`Gambar ${idx + 1} dihapus`);
+                          }}
+                          className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          Hapus
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              ) : (
+                <div className="py-4 rounded-[10px] border border-dashed border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">
+                  Belum ada gambar banner
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                <ImageUploader
+                  label="Tambah Gambar"
+                  source="tautan"
+                  value=""
+                  onChange={(_source, val) => {
+                    if (val && val.trim() !== '') {
+                      const updated = [...heroImagesData, val.trim()];
+                      const updatedForm = {
+                        ...formData,
+                        identity: {
+                          ...formData.identity,
+                          heroImages: updated,
+                        },
+                      };
+                      setFormData(updatedForm);
+                      setHasEdits(true);
+                      onUpdateCMS(updatedForm);
+                      onToast('Gambar banner ditambahkan');
+                    }
+                  }}
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Tautan Lynk.id Utama *
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Tautan Lynk.id
                 </label>
                 <input
                   type="url"
                   value={formData.identity.lynkUrl}
-                  onChange={(e) =>
-                    setFormData({
+                  onChange={(e) => {
+                    const updated = {
                       ...formData,
                       identity: { ...formData.identity, lynkUrl: e.target.value },
-                    })
-                  }
-                  className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
+                    };
+                    setFormData(updated);
+                    setHasEdits(true);
+                    onUpdateCMS(updated);
+                  }}
+                  className="w-full h-10 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[12px]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Nomor WhatsApp Utama *
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Nomor WhatsApp
                 </label>
                 <input
                   type="tel"
                   value={formData.identity.whatsapp}
-                  onChange={(e) =>
-                    setFormData({
+                  onChange={(e) => {
+                    const updated = {
                       ...formData,
                       identity: { ...formData.identity, whatsapp: e.target.value },
-                    })
-                  }
-                  className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
+                    };
+                    setFormData(updated);
+                    setHasEdits(true);
+                    onUpdateCMS(updated);
+                  }}
+                  className="w-full h-10 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[12px]"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                   Meta Title
                 </label>
                 <input
                   type="text"
                   value={formData.identity.metaTitle}
-                  onChange={(e) =>
-                    setFormData({
+                  onChange={(e) => {
+                    const updated = {
                       ...formData,
                       identity: { ...formData.identity, metaTitle: e.target.value },
-                    })
-                  }
-                  className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
+                    };
+                    setFormData(updated);
+                    setHasEdits(true);
+                    onUpdateCMS(updated);
+                  }}
+                  className="w-full h-10 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[12px]"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                   Meta Description
                 </label>
                 <input
                   type="text"
                   value={formData.identity.metaDescription}
-                  onChange={(e) =>
-                    setFormData({
+                  onChange={(e) => {
+                    const updated = {
                       ...formData,
                       identity: { ...formData.identity, metaDescription: e.target.value },
-                    })
-                  }
-                  className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
+                    };
+                    setFormData(updated);
+                    setHasEdits(true);
+                    onUpdateCMS(updated);
+                  }}
+                  className="w-full h-10 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[12px]"
                 />
               </div>
             </div>
@@ -559,180 +533,137 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
 
         {/* 2. Teks Berjalan (Running Text) */}
         {activeTab === 'runningText' && (
-          <div className="space-y-6 max-w-2xl">
-            {/* Toggle Running Text */}
-            <div className="flex items-center justify-between p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40">
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                  Aktifkan Teks Berjalan (Running Text)
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Teks pengumuman yang bergerak di bagian atas website dan dapat diklik untuk menampilkan popup gambar.
-                </p>
-              </div>
+          <div className="space-y-4 max-w-2xl">
+            {/* Toggle */}
+            <div className="flex items-center justify-between p-3.5 rounded-[12px] border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30">
+              <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                Aktifkan Teks Berjalan
+              </span>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"
                   checked={runningTextData.enabled}
-                  onChange={(e) =>
-                    setFormData({
+                  onChange={(e) => {
+                    const updated = {
                       ...formData,
                       runningText: {
                         ...runningTextData,
                         enabled: e.target.checked,
                       },
-                    })
-                  }
+                    };
+                    setFormData(updated);
+                    setHasEdits(true);
+                    onUpdateCMS(updated);
+                  }}
                   className="sr-only peer"
                 />
                 <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF7A1A]"></div>
               </label>
             </div>
 
-            {/* Isi Teks */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Isi Teks Berjalan *
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Isi Teks
               </label>
               <textarea
-                rows={3}
+                rows={2}
                 value={runningTextData.text}
-                onChange={(e) =>
-                  setFormData({
+                onChange={(e) => {
+                  const updated = {
                     ...formData,
                     runningText: {
                       ...runningTextData,
                       text: e.target.value,
                     },
-                  })
-                }
-                placeholder="Contoh: 🔥 Promo Spesial Bulan Ini! Dapatkan Akses Seluruh Kelas. Klik di sini untuk detail."
-                className="w-full p-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#FF7A1A]/40"
+                  };
+                  setFormData(updated);
+                  setHasEdits(true);
+                  onUpdateCMS(updated);
+                }}
+                className="w-full p-3 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[12px] text-slate-900 dark:text-white"
               />
             </div>
 
-            {/* Setting Warna & Kecepatan */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Warna Latar */}
-              <div className="p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3 rounded-[12px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Warna Latar (Background)
+                  Warna Latar
                 </label>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={runningTextData.bgColor || '#FF7A1A'}
-                    onChange={(e) =>
-                      setFormData({
+                    onChange={(e) => {
+                      const updated = {
                         ...formData,
-                        runningText: {
-                          ...runningTextData,
-                          bgColor: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent"
+                        runningText: { ...runningTextData, bgColor: e.target.value },
+                      };
+                      setFormData(updated);
+                      setHasEdits(true);
+                      onUpdateCMS(updated);
+                    }}
+                    className="w-9 h-9 rounded-lg cursor-pointer border-0 bg-transparent"
                   />
                   <input
                     type="text"
                     value={runningTextData.bgColor || '#FF7A1A'}
-                    onChange={(e) =>
-                      setFormData({
+                    onChange={(e) => {
+                      const updated = {
                         ...formData,
-                        runningText: {
-                          ...runningTextData,
-                          bgColor: e.target.value,
-                        },
-                      })
-                    }
-                    className="flex-1 h-10 px-3 text-xs font-mono uppercase bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[10px]"
+                        runningText: { ...runningTextData, bgColor: e.target.value },
+                      };
+                      setFormData(updated);
+                      setHasEdits(true);
+                      onUpdateCMS(updated);
+                    }}
+                    className="flex-1 h-9 px-2.5 text-xs font-mono uppercase bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[8px]"
                   />
-                </div>
-                {/* Color Presets */}
-                <div className="flex items-center gap-1.5 pt-1">
-                  {['#FF7A1A', '#0B2A5B', '#10B981', '#DC2626', '#7C3AED', '#0F172A'].map((c) => (
-                    <button
-                      type="button"
-                      key={c}
-                      onClick={() =>
-                        setFormData({
-                          ...formData,
-                          runningText: { ...runningTextData, bgColor: c },
-                        })
-                      }
-                      style={{ backgroundColor: c }}
-                      className="w-5 h-5 rounded-full border border-white/40 shadow-xs hover:scale-110 transition-transform"
-                    />
-                  ))}
                 </div>
               </div>
 
-              {/* Warna Teks */}
-              <div className="p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
+              <div className="p-3 rounded-[12px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Warna Teks
                 </label>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={runningTextData.textColor || '#FFFFFF'}
-                    onChange={(e) =>
-                      setFormData({
+                    onChange={(e) => {
+                      const updated = {
                         ...formData,
-                        runningText: {
-                          ...runningTextData,
-                          textColor: e.target.value,
-                        },
-                      })
-                    }
-                    className="w-10 h-10 rounded-lg cursor-pointer border-0 bg-transparent"
+                        runningText: { ...runningTextData, textColor: e.target.value },
+                      };
+                      setFormData(updated);
+                      setHasEdits(true);
+                      onUpdateCMS(updated);
+                    }}
+                    className="w-9 h-9 rounded-lg cursor-pointer border-0 bg-transparent"
                   />
                   <input
                     type="text"
                     value={runningTextData.textColor || '#FFFFFF'}
-                    onChange={(e) =>
-                      setFormData({
+                    onChange={(e) => {
+                      const updated = {
                         ...formData,
-                        runningText: {
-                          ...runningTextData,
-                          textColor: e.target.value,
-                        },
-                      })
-                    }
-                    className="flex-1 h-10 px-3 text-xs font-mono uppercase bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[10px]"
+                        runningText: { ...runningTextData, textColor: e.target.value },
+                      };
+                      setFormData(updated);
+                      setHasEdits(true);
+                      onUpdateCMS(updated);
+                    }}
+                    className="flex-1 h-9 px-2.5 text-xs font-mono uppercase bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[8px]"
                   />
-                </div>
-                {/* Color Presets */}
-                <div className="flex items-center gap-1.5 pt-1">
-                  {['#FFFFFF', '#0F172A', '#FEF08A', '#93C5FD', '#FDE047'].map((c) => (
-                    <button
-                      type="button"
-                      key={c}
-                      onClick={() =>
-                        setFormData({
-                          ...formData,
-                          runningText: { ...runningTextData, textColor: c },
-                        })
-                      }
-                      style={{ backgroundColor: c }}
-                      className="w-5 h-5 rounded-full border border-slate-300 shadow-xs hover:scale-110 transition-transform"
-                    />
-                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Section: Gambar Popup Saat Diklik */}
-            <div className="p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-4">
+            {/* Gambar Popup */}
+            <div className="p-3.5 rounded-[12px] border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 space-y-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    Gambar Popup (Saat Running Text Diklik)
-                  </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Pilih atau unggah gambar banner/voucher/pengumuman yang akan muncul dalam popup saat pengunjung mengklik teks berjalan.
-                  </p>
-                </div>
+                <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Gambar Popup
+                </label>
                 {runningTextData.popupImage && (
                   <button
                     type="button"
@@ -747,18 +678,18 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                       setFormData(updated);
                       setHasEdits(true);
                       onUpdateCMS(updated);
-                      onToast('Gambar popup berhasil dihapus');
+                      onToast('Gambar popup dihapus');
                     }}
-                    className="px-2.5 py-1 text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-semibold bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 rounded-[8px] flex items-center gap-1.5 transition-colors"
+                    className="text-xs text-rose-600 hover:text-rose-700 font-semibold flex items-center gap-1"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    Hapus Gambar Popup
+                    Hapus
                   </button>
                 )}
               </div>
 
               <ImageUploader
-                label="Gambar Pengumuman Popup"
+                label=""
                 source="tautan"
                 value={runningTextData.popupImage || ''}
                 onChange={(_source, val) => {
@@ -778,54 +709,60 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Judul Popup (Opsional)
+                    Judul Popup
                   </label>
                   <input
                     type="text"
                     value={runningTextData.popupTitle || ''}
-                    onChange={(e) =>
-                      setFormData({
+                    onChange={(e) => {
+                      const updated = {
                         ...formData,
                         runningText: {
                           ...runningTextData,
                           popupTitle: e.target.value,
                         },
-                      })
-                    }
-                    placeholder="Contoh: Promo Spesial Member Baru"
-                    className="w-full h-10 px-3 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[10px]"
+                      };
+                      setFormData(updated);
+                      setHasEdits(true);
+                      onUpdateCMS(updated);
+                    }}
+                    placeholder="Judul popup"
+                    className="w-full h-9 px-3 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[8px]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Keterangan Tambahan (Opsional)
+                    Keterangan Popup
                   </label>
                   <input
                     type="text"
                     value={runningTextData.popupDescription || ''}
-                    onChange={(e) =>
-                      setFormData({
+                    onChange={(e) => {
+                      const updated = {
                         ...formData,
                         runningText: {
                           ...runningTextData,
                           popupDescription: e.target.value,
                         },
-                      })
-                    }
-                    placeholder="Contoh: Berlaku s/d akhir bulan ini."
-                    className="w-full h-10 px-3 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[10px]"
+                      };
+                      setFormData(updated);
+                      setHasEdits(true);
+                      onUpdateCMS(updated);
+                    }}
+                    placeholder="Keterangan singkat"
+                    className="w-full h-9 px-3 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-[8px]"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Live Preview Bar */}
-            <div className="space-y-2 pt-2">
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Pratinjau Langsung (Klik untuk uji coba popup):
+            {/* Live Preview */}
+            <div className="space-y-1.5 pt-1">
+              <label className="text-xs font-semibold text-slate-500">
+                Pratinjau
               </label>
-              <div className="rounded-[14px] overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
+              <div className="rounded-[12px] overflow-hidden border border-slate-200 dark:border-slate-700 shadow-2xs">
                 <RunningTextBanner settings={runningTextData} />
               </div>
             </div>
