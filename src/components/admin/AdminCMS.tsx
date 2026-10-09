@@ -45,6 +45,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
 }) => {
   // Local state copy
   const [formData, setFormData] = useState<CMSSettings>(JSON.parse(JSON.stringify(cms)));
+  const [hasEdits, setHasEdits] = useState(false);
   const [internalActiveTab, setInternalActiveTab] = useState<string>(() => {
     try {
       const saved = localStorage.getItem('guber_admin_cms_tab');
@@ -97,12 +98,12 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
 
   const [isSaving, setIsSaving] = useState(false);
 
-  // Sync formData with remote cms updates from other devices in real-time
+  // Sync formData with remote cms updates only if user hasn't made active edits
   React.useEffect(() => {
-    if (!isSaving) {
+    if (!isSaving && !hasEdits) {
       setFormData(JSON.parse(JSON.stringify(cms)));
     }
-  }, [cms, isSaving]);
+  }, [cms, isSaving, hasEdits]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -110,6 +111,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
       onUpdateCMS(formData);
       await firebaseSync.syncCMSToFirebase(formData);
       store.clearDirty('cms');
+      setHasEdits(false);
       onToast('Pengaturan CMS berhasil disimpan & disinkronkan ke Firebase');
     } catch (err: any) {
       console.error(err);
@@ -125,7 +127,7 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
     bgColor: '#FF7A1A',
     textColor: '#FFFFFF',
     speed: 25,
-    popupImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop',
+    popupImage: '',
     popupTitle: 'Promo Spesial Member Baru',
     popupDescription: 'Dapatkan akses eksklusif ke seluruh materi, modul update berkala, dan komunitas diskusi.',
   };
@@ -181,14 +183,19 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                 {formData.identity.logoUrl && (
                   <button
                     type="button"
-                    onClick={() =>
-                      setFormData({
+                    onClick={() => {
+                      const updated = {
                         ...formData,
                         identity: { ...formData.identity, logoUrl: '', faviconUrl: '/favicon.svg' },
-                      })
-                    }
-                    className="text-xs text-rose-500 hover:text-rose-700 dark:hover:text-rose-400 font-medium transition-colors"
+                      };
+                      setFormData(updated);
+                      setHasEdits(true);
+                      onUpdateCMS(updated);
+                      onToast('Logo berhasil dihapus');
+                    }}
+                    className="px-2.5 py-1 text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-semibold bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 rounded-[8px] flex items-center gap-1.5 transition-colors"
                   >
+                    <Trash2 className="w-3.5 h-3.5" />
                     Hapus Logo
                   </button>
                 )}
@@ -205,12 +212,15 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                       : 'tautan'
                   }
                   value={formData.identity.logoUrl || ''}
-                  onChange={(_source, val) =>
-                    setFormData({
+                  onChange={(_source, val) => {
+                    const updated = {
                       ...formData,
                       identity: { ...formData.identity, logoUrl: val, faviconUrl: val },
-                    })
-                  }
+                    };
+                    setFormData(updated);
+                    setHasEdits(true);
+                    onUpdateCMS(updated);
+                  }}
                 />
               </div>
 
@@ -240,133 +250,214 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
               <input
                 type="text"
                 value={formData.identity.appName}
-                onChange={(e) =>
-                  setFormData({
+                onChange={(e) => {
+                  const updated = {
                     ...formData,
                     identity: { ...formData.identity, appName: e.target.value },
-                  })
-                }
+                  };
+                  setFormData(updated);
+                  setHasEdits(true);
+                  onUpdateCMS(updated);
+                }}
                 className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Judul Utama Banner *
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Judul Utama Banner
+                </label>
+                {formData.identity.heroTitle && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = {
+                        ...formData,
+                        identity: { ...formData.identity, heroTitle: '' },
+                      };
+                      setFormData(updated);
+                      setHasEdits(true);
+                      onUpdateCMS(updated);
+                      onToast('Judul banner telah dikosongkan');
+                    }}
+                    className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-medium flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Kosongkan Judul
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
-                value={formData.identity.heroTitle}
-                onChange={(e) =>
-                  setFormData({
+                value={formData.identity.heroTitle || ''}
+                onChange={(e) => {
+                  const updated = {
                     ...formData,
                     identity: { ...formData.identity, heroTitle: e.target.value },
-                  })
-                }
-                className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px]"
+                  };
+                  setFormData(updated);
+                  setHasEdits(true);
+                  onUpdateCMS(updated);
+                }}
+                placeholder="(Bisa dikosongkan untuk menampilkan gambar banner penuh tanpa teks)"
+                className="w-full h-11 px-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px]"
               />
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                💡 Jika judul dan subjudul dikosongkan, halaman utama akan menampilkan gambar banner saja tanpa ada warna/lapisan yang menutupi.
+              </p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Subjudul Banner *
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                  Subjudul Banner
+                </label>
+                {formData.identity.heroSubtitle && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = {
+                        ...formData,
+                        identity: { ...formData.identity, heroSubtitle: '' },
+                      };
+                      setFormData(updated);
+                      setHasEdits(true);
+                      onUpdateCMS(updated);
+                      onToast('Subjudul banner telah dikosongkan');
+                    }}
+                    className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-medium flex items-center gap-1"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    Kosongkan Subjudul
+                  </button>
+                )}
+              </div>
               <textarea
                 rows={3}
-                value={formData.identity.heroSubtitle}
-                onChange={(e) =>
-                  setFormData({
+                value={formData.identity.heroSubtitle || ''}
+                onChange={(e) => {
+                  const updated = {
                     ...formData,
                     identity: { ...formData.identity, heroSubtitle: e.target.value },
-                  })
-                }
-                className="w-full p-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 rounded-[14px] resize-none"
+                  };
+                  setFormData(updated);
+                  setHasEdits(true);
+                  onUpdateCMS(updated);
+                }}
+                placeholder="(Bisa dikosongkan untuk menampilkan gambar banner penuh tanpa teks)"
+                className="w-full p-3.5 text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-[14px] resize-none"
               />
             </div>
 
             {/* Gambar Latar Banner Utama (Carousel) */}
-            <div className="p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-3">
-              <div className="flex items-center justify-between">
+            <div className="p-4 sm:p-5 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    Gambar Latar Banner Utama (Carousel Slider)
+                  <label className="block text-sm font-bold text-slate-800 dark:text-slate-200">
+                    Gambar Cover / Latar Banner Utama
                   </label>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Gambar background header di halaman utama yang bergeser otomatis secara berkala.
+                    Gambar cover banner header halaman utama. Disediakan tombol hapus pada masing-masing gambar. Jika judul & subjudul dikosongkan, gambar akan tampil penuh tanpa warna yang menutupi.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-[#1E4FA8] dark:text-blue-300">
-                    {heroImagesData.length} Slide
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-[#1E4FA8] dark:text-blue-300">
+                    {heroImagesData.length} Gambar Terpasang
                   </span>
                   {heroImagesData.length > 0 && (
                     <button
                       type="button"
                       onClick={() => {
-                        setFormData({
+                        const updated = {
                           ...formData,
                           identity: {
                             ...formData.identity,
                             heroImages: [],
                           },
-                        });
+                        };
+                        setFormData(updated);
+                        setHasEdits(true);
+                        onUpdateCMS(updated);
                         onToast('Semua gambar latar cover telah dihapus');
                       }}
-                      className="text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 px-2 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                      className="text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 px-3 py-1.5 rounded-[10px] bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 transition-colors flex items-center gap-1.5"
                     >
-                      Hapus Semua Latar
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Hapus Semua Gambar
                     </button>
                   )}
                 </div>
               </div>
 
-              {/* Grid slide images */}
-              <div className="space-y-3">
+              {/* Grid slide images with explicit delete button on each card */}
+              <div className="space-y-4">
                 {heroImagesData.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {heroImagesData.map((imgUrl, idx) => (
                       <div
                         key={idx}
-                        className="group relative aspect-video rounded-[12px] overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-900 shadow-xs"
+                        className="rounded-[14px] overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm flex flex-col"
                       >
-                        <img src={imgUrl} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-between p-2">
-                          <span className="text-xs font-bold text-white px-2 py-0.5 bg-black/60 rounded-md">
-                            Slide {idx + 1}
+                        <div className="relative aspect-video w-full bg-slate-950 overflow-hidden">
+                          <img
+                            src={imgUrl}
+                            alt={`Banner Slide ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-white px-2.5 py-0.5 bg-black/70 rounded-[8px] backdrop-blur-xs shadow-xs">
+                              Gambar {idx + 1}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Tombol Hapus Pada Masing-Masing Gambar (Selalu Tampil Jelas) */}
+                        <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[140px]" title={imgUrl}>
+                            {imgUrl.startsWith('data:') ? 'Berkas Unggahan' : imgUrl.split('/').pop()?.split('?')[0] || `Gambar ${idx + 1}`}
                           </span>
                           <button
                             type="button"
                             onClick={() => {
-                              const updated = heroImagesData.filter((_, i) => i !== idx);
-                              setFormData({
+                              const updatedImages = heroImagesData.filter((_, i) => i !== idx);
+                              const updated = {
                                 ...formData,
                                 identity: {
                                   ...formData.identity,
-                                  heroImages: updated,
+                                  heroImages: updatedImages,
                                 },
-                              });
-                              onToast('Slide gambar latar berhasil dihapus');
+                              };
+                              setFormData(updated);
+                              setHasEdits(true);
+                              onUpdateCMS(updated);
+                              onToast(`Gambar cover banner ${idx + 1} berhasil dihapus`);
                             }}
-                            className="p-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-full transition-transform active:scale-90"
-                            title="Hapus slide ini"
+                            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-[10px] text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shadow-xs shrink-0"
+                            title={`Hapus gambar ${idx + 1}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
+                            Hapus Gambar
                           </button>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="p-4 rounded-[12px] bg-slate-100/70 dark:bg-slate-800/60 border border-dashed border-slate-300 dark:border-slate-700 text-center space-y-1 text-slate-500 dark:text-slate-400">
-                    <p className="text-xs font-semibold">Tidak ada gambar latar cover yang terpasang.</p>
-                    <p className="text-[11px]">Header di halaman publik saat ini menggunakan warna gradien/solid bawaan tanpa gambar latar.</p>
+                  <div className="p-6 rounded-[14px] bg-slate-100/70 dark:bg-slate-800/60 border border-dashed border-slate-300 dark:border-slate-700 text-center space-y-1.5 text-slate-500 dark:text-slate-400">
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      Tidak ada gambar latar cover banner yang terpasang
+                    </p>
+                    <p className="text-xs max-w-md mx-auto">
+                      Header di halaman publik saat ini menggunakan warna gradien bawaan tanpa gambar latar. Anda dapat menambahkan gambar banner di bawah ini.
+                    </p>
                   </div>
                 )}
 
                 {/* Tambah slide baru */}
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                    + Tambah Slide Gambar Latar Carousel
+                <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
+                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
+                    + Tambah Gambar Cover / Latar Banner Baru
                   </label>
                   <ImageUploader
                     label=""
@@ -375,14 +466,17 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
                     onChange={(_source, val) => {
                       if (val && val.trim() !== '') {
                         const updated = [...heroImagesData, val.trim()];
-                        setFormData({
+                        const updatedForm = {
                           ...formData,
                           identity: {
                             ...formData.identity,
                             heroImages: updated,
                           },
-                        });
-                        onToast('Slide gambar latar baru berhasil ditambahkan');
+                        };
+                        setFormData(updatedForm);
+                        setHasEdits(true);
+                        onUpdateCMS(updatedForm);
+                        onToast('Gambar latar banner baru berhasil ditambahkan');
                       }
                     }}
                   />
@@ -630,28 +724,55 @@ export const AdminCMS: React.FC<AdminCMSProps> = ({
 
             {/* Section: Gambar Popup Saat Diklik */}
             <div className="p-4 rounded-[14px] border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 space-y-4">
-              <div>
-                <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                  Gambar Popup (Saat Running Text Diklik)
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Pilih atau unggah gambar banner/voucher/pengumuman yang akan muncul dalam popup saat pengunjung mengklik teks berjalan.
-                </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Gambar Popup (Saat Running Text Diklik)
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Pilih atau unggah gambar banner/voucher/pengumuman yang akan muncul dalam popup saat pengunjung mengklik teks berjalan.
+                  </p>
+                </div>
+                {runningTextData.popupImage && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = {
+                        ...formData,
+                        runningText: {
+                          ...runningTextData,
+                          popupImage: '',
+                        },
+                      };
+                      setFormData(updated);
+                      setHasEdits(true);
+                      onUpdateCMS(updated);
+                      onToast('Gambar popup berhasil dihapus');
+                    }}
+                    className="px-2.5 py-1 text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-semibold bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 rounded-[8px] flex items-center gap-1.5 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Hapus Gambar Popup
+                  </button>
+                )}
               </div>
 
               <ImageUploader
                 label="Gambar Pengumuman Popup"
                 source="tautan"
                 value={runningTextData.popupImage || ''}
-                onChange={(_source, val) =>
-                  setFormData({
+                onChange={(_source, val) => {
+                  const updated = {
                     ...formData,
                     runningText: {
                       ...runningTextData,
                       popupImage: val,
                     },
-                  })
-                }
+                  };
+                  setFormData(updated);
+                  setHasEdits(true);
+                  onUpdateCMS(updated);
+                }}
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">

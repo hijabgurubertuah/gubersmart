@@ -526,11 +526,17 @@ class StoreManager {
       ...this.cms.identity,
       ...(remoteCms.identity || {}),
       logoUrl: (remoteCms.identity && 'logoUrl' in remoteCms.identity)
-        ? (remoteCms.identity.logoUrl || '')
+        ? (remoteCms.identity.logoUrl ?? '')
         : this.cms.identity.logoUrl,
+      heroTitle: (remoteCms.identity && 'heroTitle' in remoteCms.identity)
+        ? (remoteCms.identity.heroTitle ?? '')
+        : (this.cms.identity.heroTitle ?? ''),
+      heroSubtitle: (remoteCms.identity && 'heroSubtitle' in remoteCms.identity)
+        ? (remoteCms.identity.heroSubtitle ?? '')
+        : (this.cms.identity.heroSubtitle ?? ''),
       heroImages: (remoteCms.identity && Array.isArray(remoteCms.identity.heroImages))
         ? remoteCms.identity.heroImages
-        : this.cms.identity.heroImages,
+        : (this.cms.identity.heroImages || []),
     };
 
     this.cms = {

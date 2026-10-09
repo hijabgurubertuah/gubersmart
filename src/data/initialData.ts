@@ -35,7 +35,7 @@ export const INITIAL_CMS_SETTINGS: CMSSettings = {
     bgColor: '#FF7A1A',
     textColor: '#FFFFFF',
     speed: 25,
-    popupImage: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=1200&auto=format&fit=crop',
+    popupImage: '',
     popupTitle: '🔥 PROMO TERBATAS: DISKON 65% + 30%!',
     popupDescription: 'Harga normal turun drastis jadi Rp 399 rb. Kesempatan ini tidak akan lama! Kamu tidak perlu jadi programmer. Kamu hanya perlu punya ide dan mau belajar.',
   },
@@ -99,11 +99,7 @@ export const INITIAL_CMS_SETTINGS: CMSSettings = {
   },
   media: {
     promoVideoUrl: 'https://www.youtube.com/watch?v=ScMzIvxBSi4',
-    gallery: [
-      'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=800&q=80',
-    ],
+    gallery: [],
   },
   footer: {
     address: 'Jakarta Selatan, DKI Jakarta, Indonesia',

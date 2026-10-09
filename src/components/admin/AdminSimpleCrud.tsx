@@ -111,7 +111,7 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
     setField2('');
     setField3('');
     setImgSource('tautan');
-    setField4(type === 'testimonials' ? '5' : 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80');
+    setField4(type === 'testimonials' ? '5' : '');
     setField5('');
     setIsVisible(true);
     setIsEditing(true);
@@ -132,7 +132,7 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
       setField2(item.role);
       setField3(item.content);
       setField4(String(item.rating || 5));
-      setField5(item.avatarUrl);
+      setField5(item.avatarUrl || '');
     } else if (type === 'faq') {
       setField1(item.question);
       setField2(item.answer);
@@ -158,7 +158,7 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
         category: '',
         description: field3.trim(),
         imageSource: imgSource,
-        imageUrl: field4.trim() || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
+        imageUrl: field4.trim(),
         appUrl: field5.trim() || 'https://gubersmart.com',
         order: editingId ? (appExamples.find((a) => a.id === editingId)?.order || 1) : appExamples.length + 1,
         isVisible,
@@ -170,7 +170,7 @@ export const AdminSimpleCrud: React.FC<AdminSimpleCrudProps> = ({
         role: field2.trim() || 'Member',
         content: field3.trim(),
         rating: Number(field4) || 5,
-        avatarUrl: field5.trim() || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+        avatarUrl: field5.trim(),
         order: testimonials.length + 1,
         isVisible,
       });

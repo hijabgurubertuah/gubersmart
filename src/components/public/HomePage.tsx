@@ -33,6 +33,10 @@ export const HomePage: React.FC<HomePageProps> = ({
   // Background Carousel Slides
   const heroSlides = Array.isArray(cms.identity.heroImages) ? cms.identity.heroImages : [];
 
+  const hasHeroTitle = Boolean(cms.identity.heroTitle && cms.identity.heroTitle.trim() !== '');
+  const hasHeroSubtitle = Boolean(cms.identity.heroSubtitle && cms.identity.heroSubtitle.trim() !== '');
+  const hasHeroText = hasHeroTitle || hasHeroSubtitle;
+
   const [activeSlide, setActiveSlide] = useState(0);
 
   // Auto-slide carousel every 5.5s
@@ -78,8 +82,14 @@ export const HomePage: React.FC<HomePageProps> = ({
       {/* 1. Hero Section with Background Carousel */}
       {secHero?.isVisible && (
         <section
-          className={`relative overflow-hidden min-h-[220px] sm:min-h-[280px] lg:min-h-[320px] flex items-center justify-center ${
-            heroSlides.length > 0 ? 'bg-slate-950' : 'bg-gradient-to-r from-[#0B2A5B] to-[#1E4FA8]'
+          className={`relative overflow-hidden flex items-center justify-center transition-all ${
+            heroSlides.length > 0
+              ? hasHeroText
+                ? 'min-h-[220px] sm:min-h-[280px] lg:min-h-[340px] bg-slate-950'
+                : 'min-h-[220px] sm:min-h-[320px] md:min-h-[420px] lg:min-h-[500px] aspect-[16/7] md:aspect-[21/8] bg-transparent'
+              : hasHeroText
+                ? 'min-h-[220px] sm:min-h-[280px] lg:min-h-[320px] bg-gradient-to-r from-[#0B2A5B] to-[#1E4FA8]'
+                : 'min-h-[140px] bg-gradient-to-r from-[#0B2A5B] to-[#1E4FA8]'
           } group`}
         >
           {/* Background Images Carousel */}
@@ -102,8 +112,10 @@ export const HomePage: React.FC<HomePageProps> = ({
                 </div>
               ))}
 
-              {/* Dark Aesthetic Translucent Gradient Overlay for crisp text readability */}
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-900/60 backdrop-blur-[1px]" />
+              {/* Dark Aesthetic Translucent Gradient Overlay for crisp text readability ONLY if there is text! */}
+              {hasHeroText && (
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/75 to-slate-900/60 backdrop-blur-[1px]" />
+              )}
             </div>
           )}
 
@@ -129,18 +141,24 @@ export const HomePage: React.FC<HomePageProps> = ({
             </>
           )}
 
-          {/* Hero Content (Compact, without action buttons) */}
-          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 text-center">
-            <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold font-heading text-white tracking-tight leading-tight sm:leading-tight drop-shadow-md">
-                {cms.identity.heroTitle}
-              </h1>
+          {/* Hero Content (Only rendered if title or subtitle has text) */}
+          {hasHeroText && (
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 text-center">
+              <div className="max-w-3xl mx-auto space-y-3 sm:space-y-4">
+                {hasHeroTitle && (
+                  <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold font-heading text-white tracking-tight leading-tight sm:leading-tight drop-shadow-md">
+                    {cms.identity.heroTitle}
+                  </h1>
+                )}
 
-              <p className="text-xs sm:text-sm md:text-base text-slate-200 leading-relaxed font-normal max-w-2xl mx-auto drop-shadow-sm">
-                {cms.identity.heroSubtitle}
-              </p>
+                {hasHeroSubtitle && (
+                  <p className="text-xs sm:text-sm md:text-base text-slate-200 leading-relaxed font-normal max-w-2xl mx-auto drop-shadow-sm">
+                    {cms.identity.heroSubtitle}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Carousel Slide Indicator Dots */}
           {heroSlides.length > 1 && (

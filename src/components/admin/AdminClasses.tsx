@@ -91,7 +91,7 @@ export const AdminClasses: React.FC<AdminClassesProps> = ({
   const handleOpenAdd = () => {
     setEditingCourse(null);
     setCoverSource('tautan');
-    setCoverValue('https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80');
+    setCoverValue('');
     setName('');
     setDescription('');
     setPrice('');
@@ -122,7 +122,6 @@ export const AdminClasses: React.FC<AdminClassesProps> = ({
     e.preventDefault();
     const newErrors: Record<string, string> = {};
 
-    if (!coverValue.trim()) newErrors.coverValue = 'Sampul kelas wajib diisi';
     if (!name.trim()) newErrors.name = 'Nama kelas wajib diisi';
     if (!description.trim()) newErrors.description = 'Deskripsi wajib diisi';
 
